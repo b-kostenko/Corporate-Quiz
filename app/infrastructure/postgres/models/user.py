@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import String, Date
 
-from app.infrastructure.postgres.models import BaseModelMixin
+from app.infrastructure.postgres.models.base import BaseModelMixin
 
 
 class User(BaseModelMixin):

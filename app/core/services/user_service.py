@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import EmailStr
 
 from app.core.interfaces.user_serv_interface import AbstractUserService
@@ -29,7 +31,7 @@ class UserService(AbstractUserService):
             return None
         return UserOutputSchema.model_validate(response)
 
-    async def get_all(self) -> list[UserOutputSchema]:
+    async def get_all(self) -> List[UserOutputSchema]:
         users = await self.user_repository.get_all()
         return [UserOutputSchema.model_validate(user) for user in users]
 

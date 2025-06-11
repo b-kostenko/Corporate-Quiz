@@ -1,7 +1,6 @@
 from typing import List
 
 from fastapi import APIRouter
-from pydantic import EmailStr
 from starlette import status
 
 from app.application.api.deps import user_service_deps, current_user_deps

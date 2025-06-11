@@ -1,9 +1,11 @@
 from logging.config import fileConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine
-from app.infrastructure.postgres.models import BaseModelMixin
+
 from alembic import context
 from alembic.script import ScriptDirectory
+
+from app.infrastructure.postgres.models.base import BaseModelMixin
 from app.settings import settings
 
 # this is the Alembic Config object, which provides
