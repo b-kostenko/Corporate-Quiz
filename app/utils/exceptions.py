@@ -1,8 +1,5 @@
 from typing import Any, Optional
 
-from starlette import status
-
-
 class ObjectAlreadyExists(Exception):
     def __init__(self, message: Optional[str] = ""):
         super().__init__(message)
