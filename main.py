@@ -1,3 +1,5 @@
+import sys
+import subprocess
 import uvicorn
 from fastapi import FastAPI
 
@@ -25,4 +27,14 @@ def create_app() -> FastAPI:
 
 
 if __name__ == "__main__":
+    subprocess.Popen([
+        sys.executable, "-m", "celery",
+        "-A", "app.infrastructure.celery.celery_app.celery_app",
+        "worker", "--loglevel=info", "--pool=solo"
+    ])
+    subprocess.Popen([
+        sys.executable, "-m", "celery",
+        "-A", "app.infrastructure.celery.celery_app.celery_app",
+        "beat", "--loglevel=info"
+    ])
     uvicorn.run("main:create_app", host=settings.HOST, port=settings.PORT)
