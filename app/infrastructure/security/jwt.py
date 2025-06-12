@@ -23,6 +23,7 @@ def decode_token(token: str) -> Dict:
     except jwt.InvalidTokenError:
         raise ValueError("Invalid token")
 
+
 def verify_token(token: str, token_type: TokenType) -> bool:
     try:
         payload = decode_token(token)

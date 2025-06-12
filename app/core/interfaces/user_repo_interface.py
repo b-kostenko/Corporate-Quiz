@@ -7,7 +7,6 @@ from app.infrastructure.postgres.models.user import User
 
 
 class AbstractUserRepository(ABC):
-
     @abstractmethod
     async def create(self, user: User) -> User:
         raise NotImplementedError
@@ -17,7 +16,9 @@ class AbstractUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all(self, ) -> Sequence[User]:
+    async def get_all(
+        self,
+    ) -> Sequence[User]:
         raise NotImplementedError
 
     @abstractmethod
@@ -27,4 +28,3 @@ class AbstractUserRepository(ABC):
     @abstractmethod
     async def delete(self, user: User) -> None:
         raise NotImplementedError
-

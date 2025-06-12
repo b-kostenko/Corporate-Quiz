@@ -1,2 +1,1 @@
 from .connection import DeclarativeBase
-

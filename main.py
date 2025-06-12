@@ -10,6 +10,7 @@ from app.utils import exceptions
 def _include_router(app: FastAPI) -> None:
     app.include_router(routers)
 
+
 def _include_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(exceptions.ObjectAlreadyExists, error_handlers.handle_object_already_exists)
     app.add_exception_handler(exceptions.ObjectNotFound, error_handlers.handle_object_not_found)

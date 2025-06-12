@@ -33,6 +33,7 @@ class UserOutputSchema(BaseModel):
 
 class UserUpdateSchema(BaseModel):
     """Schema for updating user data."""
+
     first_name: str | None = None
     last_name: str | None = None
     password: str | None = None

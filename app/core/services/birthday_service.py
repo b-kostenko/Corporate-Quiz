@@ -9,7 +9,6 @@ from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound
 
 
 class BirthdayService(AbstractBirthdayService):
-
     def __init__(self, birthday_repository: AbstractBirthdayRepository):
         self.birthday_repository: AbstractBirthdayRepository = birthday_repository
 

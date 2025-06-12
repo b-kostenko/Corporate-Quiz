@@ -27,6 +27,7 @@ target_metadata = BaseModelMixin.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+
 # A helper function to set custom revision IDs
 def process_revision_directives(context, revision, directives):
     migration_script = directives[0]

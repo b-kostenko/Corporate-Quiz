@@ -7,7 +7,6 @@ from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema
 
 
 class AbstractUserService(ABC):
-
     @abstractmethod
     def create(self, user_input: UserInputSchema) -> UserOutputSchema:
         raise NotImplementedError

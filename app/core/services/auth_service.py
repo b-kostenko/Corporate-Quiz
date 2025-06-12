@@ -1,4 +1,3 @@
-
 from pydantic import EmailStr
 
 from app.core.repositories.user_repository import AbstractUserRepository
@@ -11,7 +10,6 @@ from app.utils.exceptions import InvalidCredentials, ObjectNotFound
 
 
 class AuthService:
-
     def __init__(self, user_repository: AbstractUserRepository):
         self.user_repository: AbstractUserRepository = user_repository
 
@@ -39,12 +37,12 @@ class AuthService:
         access_token = create_token(
             payload={"sub": user.email},
             token_type=TokenType.ACCESS,
-            expire_minutes=settings.token.ACCESS_TOKEN_EXPIRE_MINUTES
+            expire_minutes=settings.token.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
         refresh_token = create_token(
             payload={"sub": user.email},
             token_type=TokenType.REFRESH,
-            expire_minutes=settings.token.REFRESH_TOKEN_EXPIRE_MINUTES
+            expire_minutes=settings.token.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
 
         return TokenSchema(access_token=access_token, refresh_token=refresh_token, token_type=settings.token.TOKEN_TYPE)
@@ -62,11 +60,9 @@ class AuthService:
         new_access_token = create_token(
             payload={"sub": user.email},
             token_type=TokenType.ACCESS,
-            expire_minutes=settings.token.ACCESS_TOKEN_EXPIRE_MINUTES
+            expire_minutes=settings.token.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
 
         return TokenSchema(
-            access_token=new_access_token,
-            refresh_token=refresh_token,
-            token_type=settings.token.TOKEN_TYPE
+            access_token=new_access_token, refresh_token=refresh_token, token_type=settings.token.TOKEN_TYPE
         )

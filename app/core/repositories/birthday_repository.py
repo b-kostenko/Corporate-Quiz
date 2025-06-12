@@ -10,7 +10,6 @@ from app.infrastructure.postgres.session_manager import provide_async_session
 
 
 class BirthdayRepository(AbstractBirthdayRepository):
-
     @provide_async_session
     async def create(self, birthday: Birthday, session: AsyncSession) -> Birthday:
         session.add(birthday)

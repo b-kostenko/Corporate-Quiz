@@ -11,7 +11,6 @@ from app.utils.exceptions import ObjectAlreadyExists
 
 
 class UserService(AbstractUserService):
-
     def __init__(self, user_repository: AbstractUserRepository):
         self.user_repository: AbstractUserRepository = user_repository
 

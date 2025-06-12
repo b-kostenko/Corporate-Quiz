@@ -6,7 +6,6 @@ from app.infrastructure.postgres.models.user import User
 
 
 class AbstractBirthdayRepository(ABC):
-
     @abstractmethod
     async def create(self, birthday: Birthday) -> Birthday:
         raise NotImplementedError

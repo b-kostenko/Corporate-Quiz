@@ -6,7 +6,6 @@ from app.infrastructure.postgres.models.user import User
 
 
 class AbstractBirthdayService(ABC):
-
     @abstractmethod
     def create(self, user: User, user_input: BirthdayInputSchema) -> BirthdayOutputSchema:
         raise NotImplementedError
