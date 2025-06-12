@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Dict
-
+from typing import Sequence
 
 from app.infrastructure.postgres.models.birthday import Birthday
 from app.infrastructure.postgres.models.user import User

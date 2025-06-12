@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.application.api import users, auth, birthdays
+from app.application.api import auth, birthdays, users
 
 routers = APIRouter()
 

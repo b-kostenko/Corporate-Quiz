@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter
 from starlette import status
 
-from app.application.api.deps import user_service_deps, current_user_deps
+from app.application.api.deps import current_user_deps, user_service_deps
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema, UserUpdateSchema
 
 router = APIRouter(prefix="/users", tags=["Users"])

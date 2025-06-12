@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Field, BaseModel, computed_field, UUID4
+from pydantic import UUID4, BaseModel, Field, computed_field
 
 
 class BirthdayInputSchema(BaseModel):

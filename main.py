@@ -1,10 +1,11 @@
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
 from app.application.api import error_handlers
-from app.utils import exceptions
-from app.settings import settings
 from app.application.api.routers import routers
+from app.settings import settings
+from app.utils import exceptions
+
 
 def _include_router(app: FastAPI) -> None:
     app.include_router(routers)

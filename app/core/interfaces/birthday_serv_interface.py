@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-
 from app.core.schemas.birthdays_schemas import BirthdayInputSchema, BirthdayOutputSchema
 from app.infrastructure.postgres.models.user import User
 

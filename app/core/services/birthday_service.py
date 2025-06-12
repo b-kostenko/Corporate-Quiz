@@ -5,7 +5,7 @@ from app.core.interfaces.birthday_serv_interface import AbstractBirthdayService
 from app.core.schemas.birthdays_schemas import BirthdayInputSchema, BirthdayOutputSchema
 from app.infrastructure.postgres.models.birthday import Birthday
 from app.infrastructure.postgres.models.user import User
-from app.utils.exceptions import ObjectNotFound, ObjectAlreadyExists
+from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound
 
 
 class BirthdayService(AbstractBirthdayService):

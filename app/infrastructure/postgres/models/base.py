@@ -1,10 +1,10 @@
-from app.infrastructure.postgres import DeclarativeBase
+from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy.orm import Mapped, mapped_column
-from datetime import datetime
-
 from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.infrastructure.postgres import DeclarativeBase
 
 
 class BaseModelMixin(DeclarativeBase):

@@ -1,9 +1,8 @@
 from typing import List
 
 from fastapi import APIRouter
-from pydantic import UUID4
 
-from app.application.api.deps import current_user_deps, birthday_service_deps
+from app.application.api.deps import birthday_service_deps, current_user_deps
 from app.core.schemas.birthdays_schemas import BirthdayInputSchema, BirthdayOutputSchema
 
 router = APIRouter(prefix="/birthdays", tags=["Birthdays"])

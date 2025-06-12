@@ -8,6 +8,7 @@ from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
 from app.core.services.birthday_service import BirthdayService
 from app.core.services.user_service import UserService
+from app.infrastructure.postgres.models import User
 
 http_bearer = HTTPBearer()
 
@@ -42,4 +43,4 @@ async def get_current_user(auth_service: auth_service_deps, token: token_deps):
     return await auth_service.get_current_user(token.credentials)
 
 
-current_user_deps = Annotated['User', Depends(get_current_user)]
+current_user_deps = Annotated[User, Depends(get_current_user)]

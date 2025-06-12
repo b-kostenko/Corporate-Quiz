@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Dict
+from typing import Dict, Sequence
 
 from pydantic import EmailStr
 

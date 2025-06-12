@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import ForeignKey, Date, String
+from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.postgres.models.base import BaseModelMixin

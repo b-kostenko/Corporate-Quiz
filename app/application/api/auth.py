@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from starlette import status
 
-from app.application.api.deps import  auth_service_deps
+from app.application.api.deps import auth_service_deps
 from app.core.schemas.user_schemas import TokenSchema, UserLoginSchema
 
 router = APIRouter(prefix="/auth", tags=["Auth"])

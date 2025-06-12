@@ -4,10 +4,10 @@ from pydantic import EmailStr
 from app.core.repositories.user_repository import AbstractUserRepository
 from app.core.schemas.user_schemas import TokenSchema, TokenType
 from app.infrastructure.postgres.models.user import User
-from app.infrastructure.security.jwt import create_token, verify_token, decode_token
+from app.infrastructure.security.jwt import create_token, decode_token, verify_token
 from app.infrastructure.security.password import verify_password
 from app.settings import settings
-from app.utils.exceptions import ObjectNotFound, InvalidCredentials
+from app.utils.exceptions import InvalidCredentials, ObjectNotFound
 
 
 class AuthService:

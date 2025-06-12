@@ -1,9 +1,8 @@
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-
 from alembic import context
 from alembic.script import ScriptDirectory
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.infrastructure.postgres.models.base import BaseModelMixin
 from app.settings import settings
