@@ -11,7 +11,6 @@ class UserInputSchema(BaseModel):
     last_name: str | None = None
     email: EmailStr
     password: str
-    birth_date: datetime | None = None
     avatar_url: str | None = None
 
 
@@ -22,7 +21,6 @@ class UserOutputSchema(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr
-    birth_date: datetime | None = None
     avatar_url: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -37,7 +35,6 @@ class UserUpdateSchema(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     password: str | None = None
-    birth_date: datetime | None = None
     avatar_url: str | None = None
 
 
@@ -54,7 +51,7 @@ class UserPasswordUpdateSchema(BaseModel):
 class UserLoginSchema(BaseModel):
     """Schema for user login data."""
 
-    email: str
+    email: EmailStr
     password: str
 
     class Config:

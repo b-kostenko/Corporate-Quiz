@@ -3,8 +3,10 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.repositories.company_repository import CompanyRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
+from app.core.services.company_service import CompanyService
 from app.core.services.user_service import UserService
 from app.infrastructure.postgres.models import User
 
@@ -31,5 +33,12 @@ token_deps = Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)]
 async def get_current_user(auth_service: auth_service_deps, token: token_deps):
     return await auth_service.get_current_user(token.credentials)
 
+async def get_company_repository() -> CompanyRepository:
+    return CompanyRepository()
+
+async def get_company_service(company_repository = Depends(get_company_repository)):
+    return CompanyService(company_repository=company_repository)
+
 
 current_user_deps = Annotated[User, Depends(get_current_user)]
+company_deps = Annotated[CompanyService, Depends(get_company_service)]

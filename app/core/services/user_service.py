@@ -7,7 +7,7 @@ from app.core.repositories.user_repository import AbstractUserRepository
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.password import hash_password
-from app.utils.exceptions import ObjectAlreadyExists
+from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound
 
 
 class UserService(AbstractUserService):
@@ -27,7 +27,7 @@ class UserService(AbstractUserService):
     async def get(self, email: EmailStr) -> UserOutputSchema | None:
         response = await self.user_repository.get(email=email)
         if not response:
-            return None
+            raise ObjectNotFound(model_name="User", id_=email)
         return UserOutputSchema.model_validate(response)
 
     async def get_all(self) -> List[UserOutputSchema]:
