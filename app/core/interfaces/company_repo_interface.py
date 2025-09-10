@@ -3,9 +3,9 @@ from typing import Tuple, Sequence
 
 from pydantic import UUID4
 
-from app.core.schemas.companies_schemas import InvitationStatus
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
+from app.infrastructure.postgres.models.enums import InvitationStatus
 
 
 class AbstractCompanyRepository(ABC):
@@ -81,7 +81,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_company_members(self, company: Company, ) -> Sequence[User]:
+    async def get_company_members(self, company: Company, ) -> Sequence[tuple[User, CompanyMember]]:
         """Get paginated company members with total count."""
         raise NotImplementedError
 
@@ -103,4 +103,9 @@ class AbstractCompanyRepository(ABC):
     @abstractmethod
     async def check_if_user_is_company_member(self, company: Company, user_id: UUID4) -> bool:
         """ Check if a user is a member of a company."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def change_member_role(self, company: Company, user_id: UUID4, new_role: str) -> tuple[User, CompanyMember] | None:
+        """ Change a member's role in a company."""
         raise NotImplementedError

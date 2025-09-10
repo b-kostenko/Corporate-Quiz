@@ -1,26 +1,7 @@
-from enum import StrEnum
-
 from pydantic import BaseModel, EmailStr, UUID4
 
-from app.core.schemas.user_schemas import UserOutputSchema
-
-
-class CompanyStatus(StrEnum):
-    HIDDEN = "hidden"
-    VISIBLE = "visible"
-
-
-class CompanyMemberRole(StrEnum):
-    MEMBER = "member"
-    SUPPORT = "support"
-    ADMIN = "admin"
-
-
-class InvitationStatus(StrEnum):
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    DECLINED = "declined"
-    CANCELED = "canceled"
+from app.infrastructure.postgres.models import User, CompanyMember
+from app.infrastructure.postgres.models.enums import CompanyStatus, InvitationStatus, CompanyMemberRole
 
 
 class CompanyInputSchema(BaseModel):
@@ -83,7 +64,32 @@ class CompanyInvitationOutputSchema(BaseModel):
         from_attributes = True
 
 
+class CompanyMemberUserSchema(BaseModel):
+    """Schema for company member user with role."""
+    
+    id: UUID4
+    first_name: str
+    last_name: str
+    email: EmailStr
+    avatar_url: str | None = None
+    role: CompanyMemberRole
+    
+    class Config:
+        from_attributes = True
+
+    @classmethod
+    def from_models(cls, user: User, company_member: CompanyMember) -> "CompanyMemberUserSchema":
+        return cls(
+            id=user.id,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            email=user.email,
+            avatar_url=user.avatar_url,
+            role=company_member.role
+        )
+
+
 class CompanyMemberOutputSchema(CompanyOutputSchema):
     """Schema for company member output data."""
 
-    users: list[UserOutputSchema]
+    users: list[CompanyMemberUserSchema]

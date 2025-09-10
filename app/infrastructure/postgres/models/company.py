@@ -2,9 +2,9 @@ from uuid import UUID
 from sqlalchemy import String, Enum, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.schemas.companies_schemas import CompanyStatus, CompanyMemberRole, InvitationStatus
 from app.infrastructure.postgres.models import User
 from app.infrastructure.postgres.models.base import BaseModelMixin
+from app.infrastructure.postgres.models.enums import CompanyStatus, CompanyMemberRole, InvitationStatus
 
 
 class Company(BaseModelMixin):
@@ -35,6 +35,11 @@ class CompanyMember(BaseModelMixin):
 
     company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"))
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    role: Mapped[CompanyMemberRole] = mapped_column(
+        Enum(CompanyMemberRole, native_enum=False),
+        default=CompanyMemberRole.MEMBER,
+        nullable=False
+    )
 
 
 class CompanyInvitation(BaseModelMixin):

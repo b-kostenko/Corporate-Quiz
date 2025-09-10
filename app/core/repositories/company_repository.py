@@ -5,9 +5,9 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.core.schemas.companies_schemas import InvitationStatus
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
+from app.infrastructure.postgres.models.enums import InvitationStatus, CompanyMemberRole
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -158,20 +158,24 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.commit()
         await session.refresh(company_member)
 
-
     @provide_async_session
-    async def get_company_members(self, company: Company, session: AsyncSession) -> Sequence[User]:
-        """Get users of a company with total count."""
+    async def get_company_members(self, company: Company, session: AsyncSession) -> Sequence[tuple[User, CompanyMember]]:
+        """Get users of a company with their membership information.
+        
+        Returns:
+            Sequence of tuples containing (User, CompanyMember) pairs,
+            where User contains user data and CompanyMember contains role and membership info.
+        """
         query = (
-            select(User)
+            select(User, CompanyMember)
             .join(CompanyMember, CompanyMember.user_id == User.id)
             .where(CompanyMember.company_id == company.id)
             .order_by(CompanyMember.created_at.desc())
         )
         result = await session.execute(query)
-        users = result.scalars().all()
+        user_member_pairs = result.all()
 
-        return users
+        return user_member_pairs
 
 
     @provide_async_session
@@ -215,3 +219,20 @@ class CompanyRepository(AbstractCompanyRepository):
 
         await session.delete(company_member)
         await session.commit()
+
+    @provide_async_session
+    async def change_member_role(self, company: Company, user_id: UUID4, new_role: CompanyMemberRole, session: AsyncSession) -> tuple[User, CompanyMember] | None:
+        query = (
+            select(User, CompanyMember)
+            .join(CompanyMember, CompanyMember.user_id == User.id)
+            .where(
+                CompanyMember.company_id == company.id,
+                CompanyMember.user_id == user_id
+            )
+        )
+        result = await session.execute(query)
+        user, company_member = result.one_or_none()
+        company_member.role = new_role
+        await session.commit()
+        await session.refresh(company_member)
+        return user, company_member

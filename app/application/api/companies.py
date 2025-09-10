@@ -5,8 +5,9 @@ from starlette import status
 
 from app.application.api.deps import current_user_deps, company_service_deps, file_storage_deps
 from app.core.schemas.companies_schemas import CompanyOutputSchema, CompanyInputSchema, CompanyUpdateSchema, \
-    CompanyStatus, CompanyMemberOutputSchema
+    CompanyMemberOutputSchema, CompanyMemberUserSchema
 from app.core.schemas.pagination_schemas import PaginatedResponse
+from app.infrastructure.postgres.models.enums import CompanyStatus, CompanyMemberRole
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
 
@@ -93,3 +94,25 @@ async def remove_company_member(
 ) -> None:
     """Remove a member from a company."""
     await company_service.remove_user_from_company(company_id=company_id, user_id=user_id, user=user)
+
+@router.patch("/{company_id}/members/{user_id}/role", response_model=CompanyMemberUserSchema, status_code=status.HTTP_200_OK)
+async def change_company_member_role(
+    company_id: UUID4,
+    user_id: UUID4,
+    new_role: CompanyMemberRole,
+    company_service: company_service_deps,
+    user: current_user_deps
+) -> CompanyMemberUserSchema:
+    """Change a member's role in a company."""
+    member = await company_service.change_member_role(company_id=company_id, user_id=user_id, new_role=new_role, user=user)
+    return member
+
+@router.get("/{company_id}/admins", response_model=list[CompanyMemberUserSchema], status_code=status.HTTP_200_OK)
+async def get_company_admins(
+    company_id: UUID4,
+    user: current_user_deps = None,
+    company_service: company_service_deps = None
+) -> list[CompanyMemberUserSchema]:
+    """Get all admins of a specific company."""
+    admins = await company_service.get_company_admins(company_id=company_id, user=user)
+    return admins

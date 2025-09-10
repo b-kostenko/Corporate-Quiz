@@ -1,12 +1,13 @@
 from pydantic import UUID4
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.core.schemas.companies_schemas import CompanyOutputSchema, CompanyInputSchema, InvitationStatus, \
-    CompanyMemberOutputSchema
+from app.core.schemas.companies_schemas import CompanyInputSchema, CompanyOutputSchema, CompanyMemberOutputSchema, \
+    CompanyMemberUserSchema
+
 from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMeta
-from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation
+from app.infrastructure.postgres.models.enums import InvitationStatus, CompanyMemberRole
 from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, UnauthorizedAction
 
 
@@ -207,14 +208,16 @@ class CompanyService:
         if not company:
             raise ObjectNotFound(model_name="Company Invitation", id_=company_id)
 
-        # Assuming the repository has a method to get all companies with pagination
+        # Get members with their roles
         members = await self.company_repository.get_company_members(company=company)
 
-        user_schemas = [UserOutputSchema.model_validate(user) for user in members]
+        # Create user schemas with roles
+        users_schemas = [CompanyMemberUserSchema.from_models(user=user, company_member=company_member) for user, company_member in members]
+
 
         company_schema = CompanyMemberOutputSchema.model_validate({
             **CompanyOutputSchema.model_validate(company).model_dump(),
-            "users": user_schemas
+            "users": users_schemas
         })
         return company_schema
 
@@ -228,3 +231,37 @@ class CompanyService:
             raise ObjectNotFound(model_name="Company Member", id_=user_id)
 
         await self.company_repository.remove_user_from_company(company=company, user_id=user_id, user=user)
+
+    async def change_member_role(self, company_id: UUID4, user_id: UUID4, new_role: CompanyMemberRole, user: User) -> CompanyMemberUserSchema:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=company_id)
+
+        user_is_company_member = await self.company_repository.check_if_user_is_company_member(
+            company=company, user_id=user_id
+        )
+        if not user_is_company_member:
+            raise ObjectNotFound(model_name="Company Member", id_=user_id)
+
+        user, company_member = await self.company_repository.change_member_role(
+            company=company, user_id=user_id, new_role=new_role
+        )
+
+        return CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
+
+    async def get_company_admins(self, company_id: UUID4, user: User) -> list[CompanyMemberUserSchema]:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
+        if not company:
+            raise ObjectNotFound(model_name="Company Invitation", id_=company_id)
+
+        # Get members with their roles
+        members = await self.company_repository.get_company_members(company=company)
+
+        # Filter only admins
+        admin_members = [(user, member) for user, member in members if member.role == CompanyMemberRole.ADMIN]
+
+        # Create user schemas with roles
+        users_schemas = [CompanyMemberUserSchema.from_models(user=user, company_member=company_member) for user, company_member in admin_members]
+
+        return users_schemas
+

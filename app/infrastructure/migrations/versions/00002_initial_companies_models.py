@@ -2,7 +2,7 @@
 
 Revision ID: 00002
 Revises: 00001
-Create Date: 2025-09-10 23:14:34.690268
+Create Date: 2025-09-10 23:42:55.833737
 
 """
 from typing import Sequence, Union
@@ -58,6 +58,7 @@ def upgrade() -> None:
     op.create_table('company_members',
     sa.Column('company_id', sa.Uuid(), nullable=False),
     sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('role', sa.Enum('MEMBER', 'ADMIN', name='companymemberrole', native_enum=False), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
