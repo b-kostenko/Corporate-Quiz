@@ -1,7 +1,7 @@
 from pydantic import UUID4
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.core.schemas.companies_schemas import CompanyInputSchema, CompanyOutputSchema, CompanyMemberOutputSchema, \
+from app.core.schemas.company_schemas import CompanyInputSchema, CompanyOutputSchema, CompanyMemberOutputSchema, \
     CompanyMemberUserSchema
 
 from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMeta

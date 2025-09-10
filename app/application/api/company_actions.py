@@ -3,7 +3,7 @@ from pydantic import UUID4
 from starlette import status
 
 from app.application.api.deps import company_service_deps, current_user_deps, user_service_deps
-from app.core.schemas.companies_schemas import CompanyInvitationOutputSchema, CompanyInvitationInputSchema
+from app.core.schemas.company_schemas import CompanyInvitationOutputSchema, CompanyInvitationInputSchema
 
 router = APIRouter(prefix="/company-actions", tags=["Company Actions"])
 

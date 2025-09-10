@@ -4,7 +4,7 @@ from pydantic import UUID4
 from starlette import status
 
 from app.application.api.deps import current_user_deps, company_service_deps, file_storage_deps
-from app.core.schemas.companies_schemas import CompanyOutputSchema, CompanyInputSchema, CompanyUpdateSchema, \
+from app.core.schemas.company_schemas import CompanyOutputSchema, CompanyInputSchema, CompanyUpdateSchema, \
     CompanyMemberOutputSchema, CompanyMemberUserSchema
 from app.core.schemas.pagination_schemas import PaginatedResponse
 from app.infrastructure.postgres.models.enums import CompanyStatus, CompanyMemberRole

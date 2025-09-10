@@ -5,9 +5,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.core.repositories.company_repository import CompanyRepository
+from app.core.repositories.quiz_repository import QuizRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
 from app.core.services.company_service import CompanyService
+from app.core.services.quiz_service import QuizService
 from app.core.services.user_service import UserService
 from app.infrastructure.postgres.models import User
 from app.infrastructure.storage import create_local_storage
@@ -47,7 +49,17 @@ def get_file_storage() -> FileStorageInterface:
     """Get file storage instance."""
     return create_local_storage(settings.file_storage)
 
+def get_quiz_repository() -> QuizRepository:
+    return QuizRepository()
+
+def get_quiz_service(
+    company_repository: CompanyRepository = Depends(get_company_repository),
+    quiz_repository: QuizRepository = Depends(get_quiz_repository)
+) -> QuizService:
+    return QuizService(company_repository=company_repository, quiz_repository=quiz_repository)
+
 
 current_user_deps = Annotated[User, Depends(get_current_user)]
 company_service_deps = Annotated[CompanyService, Depends(get_company_service)]
 file_storage_deps = Annotated[FileStorageInterface, Depends(get_file_storage)]
+quiz_service_deps = Annotated[QuizService, Depends(get_quiz_service)]
