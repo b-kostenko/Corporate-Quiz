@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, UUID4
-
+from pydantic import BaseModel, Field
+from uuid import UUID
 
 class AnswerInputSchema(BaseModel):
     answer_text: str = Field(..., max_length=500)
@@ -16,8 +16,8 @@ class QuizInputSchema(BaseModel):
     questions: list[QuestionInputSchema]
 
 class AnswerOutputSchema(BaseModel):
-    id: UUID4
-    question_id: UUID4
+    id: UUID
+    question_id: UUID
     answer_text: str
     is_correct: bool
 
@@ -25,8 +25,8 @@ class AnswerOutputSchema(BaseModel):
         from_attributes = True
 
 class QuestionOutputSchema(BaseModel):
-    id: UUID4
-    quiz_id: UUID4
+    id: UUID
+    quiz_id: UUID
     question_text: str
     answers: list[AnswerOutputSchema] = []
 
@@ -34,8 +34,8 @@ class QuestionOutputSchema(BaseModel):
         from_attributes = True
 
 class QuizOutputSchema(BaseModel):
-    id: UUID4
-    company_id: UUID4
+    id: UUID
+    company_id: UUID
     title: str
     description: str
     counter: int

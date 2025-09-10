@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import BaseModel, EmailStr
+from uuid import UUID
 
 from app.infrastructure.postgres.models import User, CompanyMember
 from app.infrastructure.postgres.models.enums import CompanyStatus, InvitationStatus, CompanyMemberRole
@@ -20,7 +21,7 @@ class CompanyInputSchema(BaseModel):
 class CompanyOutputSchema(BaseModel):
     """Schema for company output data."""
 
-    id: UUID4
+    id: UUID
     company_name: str
     company_address: str
     company_email: EmailStr
@@ -47,17 +48,17 @@ class CompanyUpdateSchema(BaseModel):
 class CompanyInvitationInputSchema(BaseModel):
     """Schema for company invitation input data."""
 
-    company_id: UUID4
+    company_id: UUID
     invite_user_email: EmailStr
 
 
 class CompanyInvitationOutputSchema(BaseModel):
     """Schema for company invitation data."""
 
-    id: UUID4
-    company_id: UUID4
-    invited_user_id: UUID4
-    invited_by_id: UUID4
+    id: UUID
+    company_id: UUID
+    invited_user_id: UUID
+    invited_by_id: UUID
     status: InvitationStatus
 
     class Config:
@@ -67,7 +68,7 @@ class CompanyInvitationOutputSchema(BaseModel):
 class CompanyMemberUserSchema(BaseModel):
     """Schema for company member user with role."""
     
-    id: UUID4
+    id: UUID
     first_name: str
     last_name: str
     email: EmailStr

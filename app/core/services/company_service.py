@@ -1,4 +1,4 @@
-from pydantic import UUID4
+from uuid import UUID
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.core.schemas.company_schemas import CompanyInputSchema, CompanyOutputSchema, CompanyMemberOutputSchema, \
@@ -105,7 +105,7 @@ class CompanyService:
 
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
 
-    async def invite_user_to_company(self,company_id: UUID4, invite_user: User, user: User) -> CompanyInvitation:
+    async def invite_user_to_company(self,company_id: UUID, invite_user: User, user: User) -> CompanyInvitation:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -121,7 +121,7 @@ class CompanyService:
         )
         return invited
 
-    async def accept_company_invitation(self, invitation_id: UUID4, user: User) -> None:
+    async def accept_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
         company = await self.company_repository.get(company_id=invitation.company_id, owner_id=user.id)
         if not company:
@@ -140,7 +140,7 @@ class CompanyService:
         )
 
 
-    async def decline_company_invitation(self, invitation_id: UUID4, user: User) -> None:
+    async def decline_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
         if not invitation:
             raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
@@ -153,7 +153,7 @@ class CompanyService:
 
         await self.company_repository.decline_company_invitation(invitation=invitation)
 
-    async def cancel_company_invitation(self, invitation_id: UUID4, user: User) -> None:
+    async def cancel_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
         if not invitation:
             raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
@@ -168,7 +168,7 @@ class CompanyService:
         invitations = await self.company_repository.get_invitations_for_user(user=user)
         return invitations
 
-    async def get_invitations_for_company(self, company_id: UUID4, user: User) -> list[CompanyInvitation]:
+    async def get_invitations_for_company(self, company_id: UUID, user: User) -> list[CompanyInvitation]:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -176,7 +176,7 @@ class CompanyService:
         invitations = await self.company_repository.get_invitations_for_company(company=company)
         return invitations
 
-    async def request_membership_to_company(self, company_id: UUID4, user: User) -> None:
+    async def request_membership_to_company(self, company_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -191,7 +191,7 @@ class CompanyService:
             company=company, invite_user=user, invited_by=user
         )
 
-    async def leave_company(self, company_id: UUID4, user: User) -> None:
+    async def leave_company(self, company_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -202,7 +202,7 @@ class CompanyService:
 
         await self.company_repository.remove_user_from_company(company=company, user_id=user.id, user=user)
 
-    async def get_company_members(self, company_id: UUID4) -> CompanyMemberOutputSchema:
+    async def get_company_members(self, company_id: UUID) -> CompanyMemberOutputSchema:
         """Get paginated list of all companies."""
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
@@ -221,7 +221,7 @@ class CompanyService:
         })
         return company_schema
 
-    async def remove_user_from_company(self, company_id: UUID4, user_id: UUID4, user: User) -> None:
+    async def remove_user_from_company(self, company_id: UUID, user_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -232,7 +232,7 @@ class CompanyService:
 
         await self.company_repository.remove_user_from_company(company=company, user_id=user_id, user=user)
 
-    async def change_member_role(self, company_id: UUID4, user_id: UUID4, new_role: CompanyMemberRole, user: User) -> CompanyMemberUserSchema:
+    async def change_member_role(self, company_id: UUID, user_id: UUID, new_role: CompanyMemberRole, user: User) -> CompanyMemberUserSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -249,7 +249,7 @@ class CompanyService:
 
         return CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
 
-    async def get_company_admins(self, company_id: UUID4, user: User) -> list[CompanyMemberUserSchema]:
+    async def get_company_admins(self, company_id: UUID, user: User) -> list[CompanyMemberUserSchema]:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company Invitation", id_=company_id)

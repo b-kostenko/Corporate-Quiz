@@ -1,6 +1,6 @@
 from typing import Sequence, Tuple
 
-from pydantic import UUID4
+from uuid import UUID
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,13 +20,13 @@ class CompanyRepository(AbstractCompanyRepository):
         return company
 
     @provide_async_session
-    async def check_if_company_exists(self, company_email: str, owner_id: UUID4, session: AsyncSession) -> Company | None:
+    async def check_if_company_exists(self, company_email: str, owner_id: UUID, session: AsyncSession) -> Company | None:
         query = select(Company).where(Company.company_email == company_email, Company.owner_id == owner_id)
         company = await session.execute(query)
         return company.scalar_one_or_none()
 
     @provide_async_session
-    async def get(self, company_id: int, owner_id: UUID4 | None, session: AsyncSession) -> Company | None:
+    async def get(self, company_id: int, owner_id: UUID | None, session: AsyncSession) -> Company | None:
         constraints = [Company.id == company_id]
         if owner_id:
             constraints.append(Company.owner_id == owner_id)
@@ -45,14 +45,14 @@ class CompanyRepository(AbstractCompanyRepository):
         return company
 
     @provide_async_session
-    async def get_companies_for_owner(self, owner_id: UUID4, session: AsyncSession) -> Sequence[Company]:
+    async def get_companies_for_owner(self, owner_id: UUID, session: AsyncSession) -> Sequence[Company]:
         query = select(Company).where(Company.owner_id == owner_id)
         result = await session.execute(query)
         return result.scalars().all()
 
     @provide_async_session
     async def get_companies_for_owner_paginated(
-        self, owner_id: UUID4, limit: int, offset: int, session: AsyncSession
+        self, owner_id: UUID, limit: int, offset: int, session: AsyncSession
     ) -> Tuple[list[Company], int]:
         """Get paginated companies for owner with total count."""
         # Get total count
@@ -74,7 +74,7 @@ class CompanyRepository(AbstractCompanyRepository):
         return list(companies), total
 
     @provide_async_session
-    async def delete(self, company_id: int, owner_id: UUID4, session: AsyncSession) -> bool:
+    async def delete(self, company_id: int, owner_id: UUID, session: AsyncSession) -> bool:
         company = await self.get(company_id=company_id, owner_id=owner_id)
         if not company:
             return False
@@ -128,7 +128,7 @@ class CompanyRepository(AbstractCompanyRepository):
         return result.scalar_one_or_none()
 
     @provide_async_session
-    async def get_invitation_by_id(self, invitation_id: UUID4, session: AsyncSession) -> CompanyInvitation | None:
+    async def get_invitation_by_id(self, invitation_id: UUID, session: AsyncSession) -> CompanyInvitation | None:
         query = select(CompanyInvitation).where(CompanyInvitation.id == invitation_id, CompanyInvitation.status == InvitationStatus.PENDING)
         result = await session.execute(query)
         return result.scalar_one_or_none()
@@ -148,7 +148,7 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.refresh(invitation)
 
     @provide_async_session
-    async def add_user_to_company(self, company: Company, user_id: UUID4, session: AsyncSession) -> None:
+    async def add_user_to_company(self, company: Company, user_id: UUID, session: AsyncSession) -> None:
         query = {
             "company_id": company.id,
             "user_id": user_id,
@@ -198,7 +198,7 @@ class CompanyRepository(AbstractCompanyRepository):
         return result.scalars().all()
 
     @provide_async_session
-    async def check_if_user_is_company_member(self, company: Company, user_id: UUID4, session: AsyncSession) -> bool:
+    async def check_if_user_is_company_member(self, company: Company, user_id: UUID, session: AsyncSession) -> bool:
         query = select(CompanyMember).where(
             CompanyMember.company_id == company.id,
             CompanyMember.user_id == user_id
@@ -209,7 +209,7 @@ class CompanyRepository(AbstractCompanyRepository):
         return company_member is not None
 
     @provide_async_session
-    async def remove_user_from_company(self, company: Company, user_id: UUID4, user: User, session: AsyncSession) -> None:
+    async def remove_user_from_company(self, company: Company, user_id: UUID, user: User, session: AsyncSession) -> None:
         query = select(CompanyMember).where(
             CompanyMember.company_id == company.id,
             CompanyMember.user_id == user_id
@@ -221,7 +221,7 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.commit()
 
     @provide_async_session
-    async def change_member_role(self, company: Company, user_id: UUID4, new_role: CompanyMemberRole, session: AsyncSession) -> tuple[User, CompanyMember] | None:
+    async def change_member_role(self, company: Company, user_id: UUID, new_role: CompanyMemberRole, session: AsyncSession) -> tuple[User, CompanyMember] | None:
         query = (
             select(User, CompanyMember)
             .join(CompanyMember, CompanyMember.user_id == User.id)

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from pydantic import UUID4
+from uuid import UUID
 from starlette import status
 
 from app.application.api.deps import company_service_deps, current_user_deps, user_service_deps
@@ -23,7 +23,7 @@ async def invite_user_to_company(
 
 @router.post("/accept-invitation/{invitation_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 async def accept_company_invitation(
-        invitation_id: UUID4,
+        invitation_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):
@@ -32,7 +32,7 @@ async def accept_company_invitation(
 
 @router.post("/decline-invitation/{invitation_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 async def decline_company_invitation(
-        invitation_id: UUID4,
+        invitation_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):
@@ -41,7 +41,7 @@ async def decline_company_invitation(
 
 @router.post("/cancel-invitation/{invitation_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 async def cancel_company_invitation(
-        invitation_id: UUID4,
+        invitation_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):
@@ -60,7 +60,7 @@ async def get_my_invitations(
 
 @router.get("/company-invitations", response_model=list[CompanyInvitationOutputSchema], status_code=status.HTTP_200_OK)
 async def get_company_invitations(
-        company_id: UUID4,
+        company_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):
@@ -70,7 +70,7 @@ async def get_company_invitations(
 
 @router.post("/{company_id}/membership-requests", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 async def request_membership_to_company(
-        company_id: UUID4,
+        company_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):
@@ -80,7 +80,7 @@ async def request_membership_to_company(
 
 @router.post("/{company_id}/membership-leave", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
 async def leave_company(
-        company_id: UUID4,
+        company_id: UUID,
         company_service: company_service_deps,
         user: current_user_deps
 ):

@@ -1,6 +1,6 @@
 from enum import Enum
-
-from pydantic import UUID4, BaseModel, EmailStr
+from uuid import UUID
+from pydantic import BaseModel, EmailStr
 
 
 class UserInputSchema(BaseModel):
@@ -16,7 +16,7 @@ class UserInputSchema(BaseModel):
 class UserOutputSchema(BaseModel):
     """Schema for user output data."""
 
-    id: UUID4
+    id: UUID
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr
