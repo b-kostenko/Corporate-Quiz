@@ -24,8 +24,11 @@ class CompanyRepository(AbstractCompanyRepository):
         return company.scalar_one_or_none()
 
     @provide_async_session
-    async def get(self, company_id: int, session: AsyncSession) -> Company | None:
-        query = select(Company).where(Company.id == company_id)
+    async def get(self, company_id: int, owner_id: UUID4 | None, session: AsyncSession) -> Company | None:
+        constraints = [Company.id == company_id]
+        if owner_id:
+            constraints.append(Company.owner_id == owner_id)
+        query = select(Company).where(*constraints)
         company = await session.execute(query)
         return company.scalar_one_or_none()
 
@@ -46,9 +49,12 @@ class CompanyRepository(AbstractCompanyRepository):
         return result.scalars().all()
 
     @provide_async_session
-    async def delete(self, company_id: int, session: AsyncSession) -> None:
-        company = await self.get(company_id=company_id)
-        if company:
-            await session.delete(company)
-            await session.commit()
+    async def delete(self, company_id: int, owner_id: UUID4, session: AsyncSession) -> bool:
+        company = await self.get(company_id=company_id, owner_id=owner_id)
+        if not company:
+            return False
+
+        await session.delete(company)
+        await session.commit()
+        return True
 

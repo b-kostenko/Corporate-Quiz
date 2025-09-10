@@ -11,7 +11,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get(self, company_id: int) -> Company | None:
+    async def get(self, company_id: int, owner_id: UUID4 | None = None) -> Company | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -19,7 +19,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, company_id: int) -> None:
+    async def delete(self, company_id: int, owner_id: UUID4) -> None:
         raise NotImplementedError
 
     @abstractmethod

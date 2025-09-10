@@ -3,12 +3,15 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.core.repositories.company_repository import CompanyRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
 from app.core.services.company_service import CompanyService
 from app.core.services.user_service import UserService
 from app.infrastructure.postgres.models import User
+from app.infrastructure.storage import create_local_storage
+from app.settings import settings
 
 http_bearer = HTTPBearer()
 
@@ -40,5 +43,11 @@ async def get_company_service(company_repository = Depends(get_company_repositor
     return CompanyService(company_repository=company_repository)
 
 
+def get_file_storage() -> FileStorageInterface:
+    """Get file storage instance."""
+    return create_local_storage(settings.file_storage)
+
+
 current_user_deps = Annotated[User, Depends(get_current_user)]
 company_deps = Annotated[CompanyService, Depends(get_company_service)]
+file_storage_deps = Annotated[FileStorageInterface, Depends(get_file_storage)]

@@ -39,10 +39,7 @@ class CompanyUpdateSchema(BaseModel):
     """Schema for updating company data."""
 
     company_name: str | None = None
+    company_description: str | None = None
     company_address: str | None = None
-    company_email: EmailStr | None = None
     company_phone: str | None = None
     company_website: str | None = None
-    company_logo_url: str | None = None
-    company_description: str | None = None
-    company_status: CompanyStatus | None = None

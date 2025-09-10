@@ -1,7 +1,6 @@
-import sys
-import subprocess
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.application.api import error_handlers
 from app.application.api import routers
@@ -18,11 +17,15 @@ def _include_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(exceptions.ObjectNotFound, error_handlers.handle_object_not_found)
     app.add_exception_handler(exceptions.InvalidCredentials, error_handlers.handle_invalid_credentials)
 
+def _mount_static_files(app: FastAPI) -> None:
+    app.mount("/media", StaticFiles(directory=str(settings.file_storage.base_path)), name="media")
 
 def create_app() -> FastAPI:
     app = FastAPI()
     _include_router(app)
     _include_error_handlers(app)
+    _mount_static_files(app)
+
     return app
 
 

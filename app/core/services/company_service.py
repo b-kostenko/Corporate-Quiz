@@ -1,5 +1,3 @@
-from pydantic.v1 import UUID4
-
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.core.schemas.companies_schemas import CompanyOutputSchema, CompanyInputSchema
 from app.infrastructure.postgres.models import Company, User
@@ -20,19 +18,21 @@ class CompanyService:
         created_company = await self.company_repository.create(company=company_instance)
         return CompanyOutputSchema.model_validate(created_company)
 
-    async def update(self, company_id: int, company_input: CompanyInputSchema) -> CompanyOutputSchema:
-        company = await self.company_repository.get(company_id=company_id)
+    async def update(self, company_id: int, user: User, company_input: CompanyInputSchema) -> CompanyOutputSchema:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
         response = await self.company_repository.update(company=company, updates=company_input.model_dump())
         return CompanyOutputSchema.model_validate(response)
 
-    async def delete(self, company_id: int) -> None:
-        await self.company_repository.delete(company_id=company_id)
+    async def delete(self, company_id: int, user: User) -> None:
+        result = await self.company_repository.delete(company_id=company_id, owner_id=user.id)
+        if not result:
+            raise ObjectNotFound(model_name="Company", id_=company_id)
 
     async def get(self, company_id: int) -> CompanyOutputSchema | None:
-        response = await self.company_repository.get(company_id=company_id)
+        response = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not response:
             raise ObjectNotFound(model_name="Company", id_=company_id)
         return CompanyOutputSchema.model_validate(response)
@@ -40,3 +40,19 @@ class CompanyService:
     async def get_companies_for_owner(self, user: User) -> list[CompanyOutputSchema]:
         companies = await self.company_repository.get_companies_for_owner(owner_id=user.id)
         return [CompanyOutputSchema.model_validate(company) for company in companies]
+
+    async def change_status(self, company_id: int, user: User, company_status: str) -> CompanyOutputSchema:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=company_id)
+
+        response = await self.company_repository.update(company=company, updates={"company_status": company_status})
+        return CompanyOutputSchema.model_validate(response)
+
+    async def upload_logo(self, company_id: int, user: User, company_logo: str) -> CompanyOutputSchema:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=company_id)
+
+        response = await self.company_repository.update(company=company, updates={"company_logo_url": company_logo})
+        return CompanyOutputSchema.model_validate(response)
