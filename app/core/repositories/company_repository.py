@@ -1,7 +1,7 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 
 from pydantic import UUID4
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
@@ -47,6 +47,29 @@ class CompanyRepository(AbstractCompanyRepository):
         query = select(Company).where(Company.owner_id == owner_id)
         result = await session.execute(query)
         return result.scalars().all()
+
+    @provide_async_session
+    async def get_companies_for_owner_paginated(
+        self, owner_id: UUID4, limit: int, offset: int, session: AsyncSession
+    ) -> Tuple[list[Company], int]:
+        """Get paginated companies for owner with total count."""
+        # Get total count
+        count_query = select(func.count(Company.id)).where(Company.owner_id == owner_id)
+        total_result = await session.execute(count_query)
+        total = total_result.scalar()
+
+        # Get paginated results
+        query = (
+            select(Company)
+            .where(Company.owner_id == owner_id)
+            .order_by(Company.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(query)
+        companies = result.scalars().all()
+
+        return list(companies), total
 
     @provide_async_session
     async def delete(self, company_id: int, owner_id: UUID4, session: AsyncSession) -> bool:

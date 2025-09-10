@@ -1,12 +1,12 @@
 
-from fastapi import APIRouter, UploadFile, HTTPException
+from fastapi import APIRouter, UploadFile, HTTPException, Query
 from pydantic import UUID4
 from starlette import status
 
 from app.application.api.deps import current_user_deps, company_deps, file_storage_deps
-from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.core.schemas.companies_schemas import CompanyOutputSchema, CompanyInputSchema, CompanyUpdateSchema, \
     CompanyStatus
+from app.core.schemas.pagination_schemas import PaginatedResponse
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
 
@@ -16,10 +16,15 @@ async def create_company(company_input: CompanyInputSchema, user: current_user_d
     company = await company_service.create(company_input=company_input, user=user)
     return company
 
-@router.get("/", response_model=list[CompanyOutputSchema], status_code=status.HTTP_200_OK)
-async def get_my_companies(user: current_user_deps, company_service: company_deps) -> list[CompanyOutputSchema]:
-    """Get all companies for the current user."""
-    companies = await company_service.get_companies_for_owner(user=user)
+@router.get("/", response_model=PaginatedResponse[CompanyOutputSchema], status_code=status.HTTP_200_OK)
+async def get_my_companies(
+    limit: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
+    offset: int = Query(default=0, ge=0, description="Number of items to skip"),
+    user: current_user_deps = None,
+    company_service: company_deps = None
+) -> PaginatedResponse[CompanyOutputSchema]:
+    """Get paginated companies for the current user."""
+    companies = await company_service.get_companies_for_owner_paginated(user=user, limit=limit, offset=offset)
     return companies
 
 @router.get("/{company_id}", response_model=CompanyOutputSchema, status_code=status.HTTP_200_OK)
