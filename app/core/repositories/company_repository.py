@@ -5,7 +5,9 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.infrastructure.postgres.models import Company
+from app.core.schemas.companies_schemas import InvitationStatus
+from app.infrastructure.postgres.models import Company, User
+from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -81,3 +83,135 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.commit()
         return True
 
+    @provide_async_session
+    async def get_all_companies_paginated(self, limit: int, offset: int, session: AsyncSession) -> Tuple[list[Company], int]:
+        """Get paginated companies with total count."""
+        # Get total count
+        count_query = select(func.count(Company.id))
+        total_result = await session.execute(count_query)
+        total = total_result.scalar()
+
+        # Get paginated results
+        query = (
+            select(Company)
+            .order_by(Company.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(query)
+        companies = result.scalars().all()
+
+        return list(companies), total
+
+
+    @provide_async_session
+    async def invite_user_to_company(self, company: Company, invite_user: User, invited_by: User, session: AsyncSession) -> CompanyInvitation:
+        query = {
+            "company_id": company.id,
+            "invited_user_id": invite_user.id,
+            "invited_by_id": invited_by.id
+        }
+        invitation = CompanyInvitation(**query)
+        session.add(invitation)
+        await session.commit()
+        await session.refresh(invitation)
+        return invitation
+
+    @provide_async_session
+    async def check_if_invite_exists(self, company: Company, invite_user: User, status: InvitationStatus, session: AsyncSession) -> CompanyInvitation | None:
+        query = select(CompanyInvitation).where(
+            CompanyInvitation.company_id == company.id,
+            CompanyInvitation.invited_user_id == invite_user.id,
+            CompanyInvitation.status == status
+        )
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @provide_async_session
+    async def get_invitation_by_id(self, invitation_id: UUID4, session: AsyncSession) -> CompanyInvitation | None:
+        query = select(CompanyInvitation).where(CompanyInvitation.id == invitation_id, CompanyInvitation.status == InvitationStatus.PENDING)
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @provide_async_session
+    async def accept_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.ACCEPTED
+        await session.commit()
+        await session.refresh(invitation)
+
+    @provide_async_session
+    async def decline_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.DECLINED
+        await session.commit()
+        await session.refresh(invitation)
+
+    @provide_async_session
+    async def add_user_to_company(self, company: Company, user_id: UUID4, session: AsyncSession) -> None:
+        query = {
+            "company_id": company.id,
+            "user_id": user_id,
+        }
+        company_member = CompanyMember(**query)
+        session.add(company_member)
+        await session.commit()
+        await session.refresh(company_member)
+
+
+    @provide_async_session
+    async def get_company_members(self, company: Company, session: AsyncSession) -> Sequence[User]:
+        """Get users of a company with total count."""
+        query = (
+            select(User)
+            .join(CompanyMember, CompanyMember.user_id == User.id)
+            .where(CompanyMember.company_id == company.id)
+            .order_by(CompanyMember.created_at.desc())
+        )
+        result = await session.execute(query)
+        users = result.scalars().all()
+
+        return users
+
+
+    @provide_async_session
+    async def cancel_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.CANCELED
+        await session.commit()
+        await session.refresh(invitation)
+
+    @provide_async_session
+    async def get_invitations_for_user(self, user: User, session: AsyncSession) -> Sequence[CompanyInvitation]:
+        query = select(CompanyInvitation).where(CompanyInvitation.invited_user_id == user.id)
+        result = await session.execute(query)
+        return result.scalars().all()
+
+    @provide_async_session
+    async def get_invitations_for_company(self, company: Company, session: AsyncSession) -> Sequence[CompanyInvitation]:
+        query = select(CompanyInvitation).where(CompanyInvitation.company_id == company.id)
+        result = await session.execute(query)
+        return result.scalars().all()
+
+    @provide_async_session
+    async def check_if_user_is_company_member(self, company: Company, user_id: UUID4, session: AsyncSession) -> bool:
+        query = select(CompanyMember).where(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == user_id
+        )
+
+        result = await session.execute(query)
+        company_member = result.scalar_one_or_none()
+        return company_member is not None
+
+    @provide_async_session
+    async def remove_user_from_company(self, company: Company, user_id: UUID4, user: User, session: AsyncSession) -> None:
+        query = select(CompanyMember).where(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == user_id
+        )
+        result = await session.execute(query)
+        company_member = result.scalar_one_or_none()
+
+        await session.delete(company_member)
+        await session.commit()

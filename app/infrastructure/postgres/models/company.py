@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy import String, Enum, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.schemas.companies_schemas import CompanyStatus
+from app.core.schemas.companies_schemas import CompanyStatus, CompanyMemberRole, InvitationStatus
 from app.infrastructure.postgres.models import User
 from app.infrastructure.postgres.models.base import BaseModelMixin
 
@@ -30,3 +30,21 @@ class Company(BaseModelMixin):
     )
 
 
+class CompanyMember(BaseModelMixin):
+    __tablename__ = "company_members"
+
+    company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+
+
+class CompanyInvitation(BaseModelMixin):
+    __tablename__ = "company_invitations"
+
+    company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"))
+    invited_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    invited_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[InvitationStatus] = mapped_column(
+        Enum(InvitationStatus, native_enum=False),
+        default=InvitationStatus.PENDING,
+        nullable=False
+    )

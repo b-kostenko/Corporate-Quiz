@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 
 from pydantic import UUID4, BaseModel, EmailStr
@@ -22,11 +21,9 @@ class UserOutputSchema(BaseModel):
     last_name: str | None = None
     email: EmailStr
     avatar_url: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
     class Config:
-        from_attributes = True  # Enable ORM mode to work with SQLAlchemy models
+        from_attributes = True
 
 
 class UserUpdateSchema(BaseModel):
@@ -55,7 +52,7 @@ class UserLoginSchema(BaseModel):
     password: str
 
     class Config:
-        str_min_length = 1  # Ensure that username and password are not empty
+        str_min_length = 1
 
 
 class TokenType(str, Enum):

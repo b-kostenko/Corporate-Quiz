@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter
+from pydantic import EmailStr
 from starlette import status
 
 from app.application.api.deps import current_user_deps, user_service_deps
@@ -18,6 +19,11 @@ async def get_users(user_service: user_service_deps, _: current_user_deps):
 @router.get("/", response_model=UserOutputSchema, status_code=status.HTTP_200_OK)
 async def get_user(user_service: user_service_deps, user: current_user_deps):
     user = await user_service.get(email=user.email)
+    return user
+
+@router.get("/{email}", response_model=UserOutputSchema, status_code=status.HTTP_200_OK)
+async def get_user_by_email(email: EmailStr, user_service: user_service_deps):
+    user = await user_service.get(email=email)
     return user
 
 

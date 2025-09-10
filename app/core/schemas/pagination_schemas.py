@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Optional
+from typing import Generic, TypeVar
 from pydantic import BaseModel, Field
 
 T = TypeVar('T')
@@ -23,3 +23,4 @@ class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response."""
     items: list[T] = Field(description="List of items")
     meta: PaginationMeta = Field(description="Pagination metadata")
+

@@ -49,5 +49,5 @@ def get_file_storage() -> FileStorageInterface:
 
 
 current_user_deps = Annotated[User, Depends(get_current_user)]
-company_deps = Annotated[CompanyService, Depends(get_company_service)]
+company_service_deps = Annotated[CompanyService, Depends(get_company_service)]
 file_storage_deps = Annotated[FileStorageInterface, Depends(get_file_storage)]

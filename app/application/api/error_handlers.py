@@ -14,3 +14,6 @@ def handle_object_already_exists(_: Request, e: base_exc.ObjectAlreadyExists) ->
 
 def handle_invalid_credentials(_: Request, e: base_exc.InvalidCredentials) -> JSONResponse:
     return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_401_UNAUTHORIZED)
+
+def handle_unauthorized_action(_: Request, e: base_exc.InvalidCredentials) -> JSONResponse:
+    return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_403_FORBIDDEN)
