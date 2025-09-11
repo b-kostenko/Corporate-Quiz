@@ -12,7 +12,6 @@ class QuestionInputSchema(BaseModel):
 class QuizInputSchema(BaseModel):
     title: str = Field(..., max_length=100)
     description: str = Field(..., max_length=500)
-    counter: int = Field(default=0)
     questions: list[QuestionInputSchema]
 
 class AnswerOutputSchema(BaseModel):

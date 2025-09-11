@@ -9,6 +9,7 @@ class CompanyStatus(StrEnum):
 class CompanyMemberRole(StrEnum):
     MEMBER = "member"
     ADMIN = "admin"
+    OWNER = "owner"
 
 
 class InvitationStatus(StrEnum):

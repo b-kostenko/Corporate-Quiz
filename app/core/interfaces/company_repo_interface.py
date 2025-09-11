@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import InvitationStatus
+from app.infrastructure.postgres.models.enums import InvitationStatus, CompanyMemberRole
 
 
 class AbstractCompanyRepository(ABC):
@@ -70,7 +70,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add_user_to_company(self, company: Company, user_id: UUID) -> None:
+    async def add_user_to_company(self, company: Company, user_id: UUID, role: CompanyMemberRole) -> None:
         """Get invitation by ID."""
         raise NotImplementedError
 
@@ -82,6 +82,11 @@ class AbstractCompanyRepository(ABC):
     @abstractmethod
     async def get_company_members(self, company: Company, ) -> Sequence[tuple[User, CompanyMember]]:
         """Get paginated company members with total count."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_company_member(self, company: Company, user_id: UUID) -> CompanyMember | None:
+        """Get a specific company member."""
         raise NotImplementedError
 
     @abstractmethod

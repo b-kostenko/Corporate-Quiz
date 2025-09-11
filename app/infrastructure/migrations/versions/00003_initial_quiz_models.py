@@ -2,7 +2,7 @@
 
 Revision ID: 00003
 Revises: 00002
-Create Date: 2025-09-11 02:28:31.893480
+Create Date: 2025-09-11 13:04:32.577307
 
 """
 from typing import Sequence, Union
@@ -52,7 +52,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ),
+    sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_answers_created_at'), 'answers', ['created_at'], unique=False)

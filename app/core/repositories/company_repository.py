@@ -148,10 +148,11 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.refresh(invitation)
 
     @provide_async_session
-    async def add_user_to_company(self, company: Company, user_id: UUID, session: AsyncSession) -> None:
+    async def add_user_to_company(self, company: Company, user_id: UUID, role: CompanyMemberRole, session: AsyncSession) -> None:
         query = {
             "company_id": company.id,
             "user_id": user_id,
+            "role": role
         }
         company_member = CompanyMember(**query)
         session.add(company_member)
@@ -176,6 +177,16 @@ class CompanyRepository(AbstractCompanyRepository):
         user_member_pairs = result.all()
 
         return user_member_pairs
+
+    @provide_async_session
+    async def get_company_member(self, company: Company, user_id: UUID, session: AsyncSession) -> CompanyMember | None:
+        """Get a specific company member."""
+        query = select(CompanyMember).where(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == user_id
+        )
+        result = await session.execute(query)
+        return result.scalars().first()
 
 
     @provide_async_session

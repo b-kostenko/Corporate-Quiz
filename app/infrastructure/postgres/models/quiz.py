@@ -17,6 +17,7 @@ class Quiz(BaseModelMixin):
     questions = relationship(
         "Question",
         back_populates="quiz",
+        cascade="all, delete-orphan",
         lazy="selectin"
     )
 
@@ -39,7 +40,7 @@ class Question(BaseModelMixin):
 class Answer(BaseModelMixin):
     __tablename__ = "answers"
 
-    question_id: Mapped[UUID] = mapped_column(ForeignKey('questions.id'), nullable=False)
+    question_id: Mapped[UUID] = mapped_column(ForeignKey('questions.id', ondelete="CASCADE"), nullable=False)
     answer_text: Mapped[str] = mapped_column(String(500))
     is_correct: Mapped[bool] = mapped_column(default=False)
 

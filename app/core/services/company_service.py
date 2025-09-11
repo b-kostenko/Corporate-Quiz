@@ -22,10 +22,14 @@ class CompanyService:
         )
         if company_exists:
             raise ObjectAlreadyExists(message="Company with this email already exists.")
+
         created_company = await self.company_repository.create(company=company_instance)
+        await self.company_repository.add_user_to_company(
+            company=created_company, user_id=user.id, role=CompanyMemberRole.OWNER
+        )
         return CompanyOutputSchema.model_validate(created_company)
 
-    async def update(self, company_id: int, user: User, company_input: CompanyInputSchema) -> CompanyOutputSchema:
+    async def update(self, company_id: UUID, user: User, company_input: CompanyInputSchema) -> CompanyOutputSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -33,12 +37,12 @@ class CompanyService:
         response = await self.company_repository.update(company=company, updates=company_input.model_dump())
         return CompanyOutputSchema.model_validate(response)
 
-    async def delete(self, company_id: int, user: User) -> None:
+    async def delete(self, company_id: UUID, user: User) -> None:
         result = await self.company_repository.delete(company_id=company_id, owner_id=user.id)
         if not result:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
-    async def get(self, company_id: int) -> CompanyOutputSchema | None:
+    async def get(self, company_id: UUID) -> CompanyOutputSchema | None:
         response = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not response:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -70,7 +74,7 @@ class CompanyService:
         
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
 
-    async def change_status(self, company_id: int, user: User, company_status: str) -> CompanyOutputSchema:
+    async def change_status(self, company_id: UUID, user: User, company_status: str) -> CompanyOutputSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -78,7 +82,7 @@ class CompanyService:
         response = await self.company_repository.update(company=company, updates={"company_status": company_status})
         return CompanyOutputSchema.model_validate(response)
 
-    async def upload_logo(self, company_id: int, user: User, company_logo: str) -> CompanyOutputSchema:
+    async def upload_logo(self, company_id: UUID, user: User, company_logo: str) -> CompanyOutputSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -136,9 +140,8 @@ class CompanyService:
         await self.company_repository.accept_company_invitation(invitation=invitation)
 
         await self.company_repository.add_user_to_company(
-            company=company, user_id=invitation.invited_user_id
+            company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
         )
-
 
     async def decline_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
