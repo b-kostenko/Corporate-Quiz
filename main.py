@@ -2,8 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.application.api import error_handlers
-from app.application.api import routers
+from app.application.api import error_handlers, routers
 from app.settings import settings
 from app.utils import exceptions
 
@@ -19,8 +18,10 @@ def _include_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(exceptions.UnauthorizedAction, error_handlers.handle_unauthorized_action)
     app.add_exception_handler(exceptions.PermissionDenied, error_handlers.handle_permission_denied)
 
+
 def _mount_static_files(app: FastAPI) -> None:
     app.mount("/media", StaticFiles(directory=str(settings.file_storage.base_path)), name="media")
+
 
 def create_app() -> FastAPI:
     app = FastAPI()

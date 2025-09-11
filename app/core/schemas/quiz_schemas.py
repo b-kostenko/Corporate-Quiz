@@ -1,20 +1,24 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
-from uuid import UUID
+
 
 class AnswerInputSchema(BaseModel):
     answer_text: str = Field(..., max_length=500)
     is_correct: bool = False
 
+
 class QuestionInputSchema(BaseModel):
     question_text: str = Field(..., max_length=500)
     answers: list[AnswerInputSchema]
+
 
 class QuizInputSchema(BaseModel):
     title: str = Field(..., max_length=100)
     description: str = Field(..., max_length=500)
     questions: list[QuestionInputSchema]
+
 
 class AnswerOutputSchema(BaseModel):
     id: UUID
@@ -25,6 +29,7 @@ class AnswerOutputSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class QuestionOutputSchema(BaseModel):
     id: UUID
     quiz_id: UUID
@@ -33,6 +38,7 @@ class QuestionOutputSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class QuizOutputSchema(BaseModel):
     id: UUID
@@ -51,6 +57,7 @@ class QuizResultSchema(BaseModel):
     total_questions: int
     correct_answers_count: int
 
+
 class AttemptQuizInputSchema(BaseModel):
     questions: list[QuestionInputSchema]
 
@@ -60,7 +67,6 @@ class AttemptQuizOutputSchema(QuizResultSchema):
     user_id: UUID
     company_id: UUID
     last_attempt_time: datetime
-
 
     class Config:
         from_attributes = True

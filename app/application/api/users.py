@@ -21,6 +21,7 @@ async def get_user(user_service: user_service_deps, user: current_user_deps):
     user = await user_service.get(email=user.email)
     return user
 
+
 @router.get("/{email}", response_model=UserOutputSchema, status_code=status.HTTP_200_OK)
 async def get_user_by_email(email: EmailStr, user_service: user_service_deps):
     user = await user_service.get(email=email)

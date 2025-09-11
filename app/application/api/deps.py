@@ -38,10 +38,12 @@ token_deps = Annotated[HTTPAuthorizationCredentials, Depends(http_bearer)]
 async def get_current_user(auth_service: auth_service_deps, token: token_deps):
     return await auth_service.get_current_user(token.credentials)
 
+
 async def get_company_repository() -> CompanyRepository:
     return CompanyRepository()
 
-async def get_company_service(company_repository = Depends(get_company_repository)):
+
+async def get_company_service(company_repository=Depends(get_company_repository)):
     return CompanyService(company_repository=company_repository)
 
 
@@ -49,12 +51,14 @@ def get_file_storage() -> FileStorageInterface:
     """Get file storage instance."""
     return create_local_storage(settings.file_storage)
 
+
 def get_quiz_repository() -> QuizRepository:
     return QuizRepository()
 
+
 def get_quiz_service(
     company_repository: CompanyRepository = Depends(get_company_repository),
-    quiz_repository: QuizRepository = Depends(get_quiz_repository)
+    quiz_repository: QuizRepository = Depends(get_quiz_repository),
 ) -> QuizService:
     return QuizService(company_repository=company_repository, quiz_repository=quiz_repository)
 

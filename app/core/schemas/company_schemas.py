@@ -1,8 +1,9 @@
-from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
-from app.infrastructure.postgres.models import User, CompanyMember
-from app.infrastructure.postgres.models.enums import CompanyStatus, InvitationStatus, CompanyMemberRole
+from pydantic import BaseModel, EmailStr
+
+from app.infrastructure.postgres.models import CompanyMember, User
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus
 
 
 class CompanyInputSchema(BaseModel):
@@ -67,14 +68,14 @@ class CompanyInvitationOutputSchema(BaseModel):
 
 class CompanyMemberUserSchema(BaseModel):
     """Schema for company member user with role."""
-    
+
     id: UUID
     first_name: str
     last_name: str
     email: EmailStr
     avatar_url: str | None = None
     role: CompanyMemberRole
-    
+
     class Config:
         from_attributes = True
 
@@ -86,7 +87,7 @@ class CompanyMemberUserSchema(BaseModel):
             last_name=user.last_name,
             email=user.email,
             avatar_url=user.avatar_url,
-            role=company_member.role
+            role=company_member.role,
         )
 
 

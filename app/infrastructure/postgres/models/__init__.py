@@ -1,7 +1,6 @@
+from app.infrastructure.postgres.models.company import Company, CompanyInvitation, CompanyMember
+from app.infrastructure.postgres.models.quiz import Answer, Question, Quiz, UserQuizAttempt
 from app.infrastructure.postgres.models.user import User
-from app.infrastructure.postgres.models.company import Company, CompanyMember, CompanyInvitation
-from app.infrastructure.postgres.models.quiz import Quiz, Question, Answer, UserQuizAttempt
-
 
 __all__ = [
     "User",
