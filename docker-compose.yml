@@ -1,4 +1,25 @@
 services:
+  app:
+    build: .
+    container_name: fastapi-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./media:/app/media
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -26,42 +47,6 @@ services:
       retries: 5
     ports:
       - "6379:6379"
-
-  celery-worker:
-    image: celery:latest
-    container_name: celery-worker
-    volumes:
-      - .:/app
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "app.infrastructure.celery.celery_app.celery_app", "status" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-    command: celery -A app.infrastructure.celery.celery_app.celery_app worker --loglevel=info
-
-  celery-beat:
-    image: celery:latest
-    container_name: celery-beat
-    volumes:
-      - .:/app
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "app.infrastructure.celery.celery_app.celery_app", "status" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-    command: celery -A app.infrastructure.celery.celery_app.celery_app beat --loglevel=info
 
 volumes:
     postgres_data:
