@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.interfaces.quiz_repo_interface import AbstractQuizRepository
-from app.core.schemas.quiz_schemas import QuizInputSchema, AnswerInputSchema, QuestionInputSchema
-from app.infrastructure.postgres.models import Company, Quiz, Question, Answer
+from app.core.schemas.quiz_schemas import QuizInputSchema, AnswerInputSchema, QuestionInputSchema, QuizResultSchema
+from app.infrastructure.postgres.models import Company, Quiz, Question, Answer, User
+from app.infrastructure.postgres.models.quiz import UserQuizAttempt
 
 from app.infrastructure.postgres.session_manager import provide_async_session
 
@@ -79,6 +80,21 @@ class QuizRepository(AbstractQuizRepository):
         quizzes = result.scalars().all()
 
         return list(quizzes), total
+
+    @provide_async_session
+    async def record_quiz_attempt(self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema, session: AsyncSession) -> UserQuizAttempt:
+        user_quiz_attempt = UserQuizAttempt(
+            user_id=user.id,
+            quiz_id=quiz.id,
+            company_id=company.id,
+            score=score.score,
+            total_questions=score.total_questions,
+            correct_answers_count=score.correct_answers_count,
+        )
+        session.add(user_quiz_attempt)
+        await session.commit()
+        await session.refresh(user_quiz_attempt)
+        return user_quiz_attempt
 
     @provide_async_session
     async def _update_quiz(self, quiz: Quiz, quiz_payload: QuizInputSchema, session: AsyncSession) -> Quiz:

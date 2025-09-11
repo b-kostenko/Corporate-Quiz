@@ -4,9 +4,10 @@ from starlette import status
 
 from app.application.api.deps import current_user_deps, quiz_service_deps
 from app.core.schemas import PaginatedResponse
-from app.core.schemas.quiz_schemas import QuizInputSchema, QuizOutputSchema
+from app.core.schemas.quiz_schemas import QuizInputSchema, QuizOutputSchema, AttemptQuizInputSchema, \
+    AttemptQuizOutputSchema
 
-router = APIRouter(prefix="/quiz", tags=["Quiz"])
+router = APIRouter(prefix="/quizzes", tags=["Quiz"])
 
 @router.post("/{company_id}", response_model=QuizOutputSchema, status_code=status.HTTP_201_CREATED)
 async def create_quiz(company_id: UUID, quiz_payload: QuizInputSchema, quiz_service: quiz_service_deps, current_user: current_user_deps) -> QuizOutputSchema:
@@ -33,3 +34,9 @@ async def get_company_quizzes(
 ) -> PaginatedResponse[QuizOutputSchema]:
     quizzes = await quiz_service.get_company_quizzes(company_id=company_id, user=current_user, limit=limit, offset=offset)
     return quizzes
+
+
+@router.post("/{quiz_id}/{company_id}/attempts", response_model=AttemptQuizOutputSchema, status_code=status.HTTP_200_OK)
+async def attempt_quiz(quiz_payload: AttemptQuizInputSchema, quiz_id: UUID, company_id: UUID, quiz_service: quiz_service_deps, current_user: current_user_deps) -> AttemptQuizOutputSchema:
+    attempt = await quiz_service.attempt_quiz(quiz_payload=quiz_payload, quiz_id=quiz_id, company_id=company_id, user=current_user)
+    return attempt

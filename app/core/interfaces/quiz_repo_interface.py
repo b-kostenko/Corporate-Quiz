@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.core.schemas.quiz_schemas import QuizInputSchema
-from app.infrastructure.postgres.models import Company, Quiz
+from app.core.schemas.quiz_schemas import QuizInputSchema, QuizResultSchema
+from app.infrastructure.postgres.models import Company, Quiz, User
 
 
 class AbstractQuizRepository(ABC):
@@ -29,4 +29,9 @@ class AbstractQuizRepository(ABC):
     @abstractmethod
     async def get_quizzes_by_company(self, company: Company, limit: int, offset: int):
         """Retrieve quizzes associated with a specific company, with pagination."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def record_quiz_attempt(self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema):
+        """Record an attempt for a quiz by a user."""
         raise NotImplementedError

@@ -25,6 +25,10 @@ class Company(BaseModelMixin):
     owner_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False)
     owner: Mapped[User] = relationship(User)
 
+    quiz_attempts = relationship(
+        "UserQuizAttempt", back_populates="company"
+    )
+
     __table_args__ = (
         UniqueConstraint("owner_id", "company_email", name="uq_owner_email"),
     )

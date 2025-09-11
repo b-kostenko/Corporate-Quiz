@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -43,3 +45,22 @@ class QuizOutputSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
+class QuizResultSchema(BaseModel):
+    score: float
+    total_questions: int
+    correct_answers_count: int
+
+class AttemptQuizInputSchema(BaseModel):
+    questions: list[QuestionInputSchema]
+
+
+class AttemptQuizOutputSchema(QuizResultSchema):
+    quiz_id: UUID
+    user_id: UUID
+    company_id: UUID
+    last_attempt_time: datetime
+
+
+    class Config:
+        from_attributes = True

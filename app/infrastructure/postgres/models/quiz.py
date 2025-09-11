@@ -1,6 +1,7 @@
+from datetime import datetime, UTC
 from uuid import UUID
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.postgres.models.base import BaseModelMixin
@@ -21,6 +22,9 @@ class Quiz(BaseModelMixin):
         lazy="selectin"
     )
 
+    user_attempts = relationship(
+        "UserQuizAttempt", back_populates="quiz"
+    )
 
 class Question(BaseModelMixin):
     __tablename__ = "questions"
@@ -45,3 +49,20 @@ class Answer(BaseModelMixin):
     is_correct: Mapped[bool] = mapped_column(default=False)
 
     question: Mapped["Question"] = relationship("Question", back_populates="answers")
+
+
+class UserQuizAttempt(BaseModelMixin):
+    __tablename__ = "user_quiz_attempts"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    quiz_id: Mapped[UUID] = mapped_column(ForeignKey("quizzes.id"), nullable=False)
+    company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    score: Mapped[float] = mapped_column(default=0.0)
+    last_attempt_time: Mapped[datetime] = mapped_column(default=func.now())
+    total_questions: Mapped[int] = mapped_column(default=0)
+    correct_answers_count: Mapped[int] = mapped_column(default=0)
+
+
+    user = relationship("User", back_populates="quiz_attempts")
+    quiz = relationship("Quiz", back_populates="user_attempts")
+    company = relationship("Company", back_populates="quiz_attempts")

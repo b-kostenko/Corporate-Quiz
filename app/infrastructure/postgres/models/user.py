@@ -1,6 +1,6 @@
 from pydantic import EmailStr
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.postgres.models.base import BaseModelMixin
 
@@ -13,3 +13,7 @@ class User(BaseModelMixin):
     email: Mapped[EmailStr] = mapped_column(String(200), unique=True)
     password: Mapped[str] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(200))
+
+    quiz_attempts = relationship(
+        "UserQuizAttempt", back_populates="user"
+    )
