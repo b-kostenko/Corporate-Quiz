@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/login", response_model=TokenSchema, status_code=status.HTTP_200_OK, description="Login")
-async def login_user(login_data: UserLoginSchema, auth_service: auth_service_deps):
+async def login(login_data: UserLoginSchema, auth_service: auth_service_deps):
     return await auth_service.login(email=login_data.email, password=login_data.password)
 
 
@@ -31,7 +31,7 @@ async def change_password(payload: UserPasswordUpdateSchema, auth_service: auth_
 
 
 @router.get("/azure/login", response_model=None, status_code=status.HTTP_200_OK, description="Azure SSO login")
-async def login(auth_service: auth_service_deps):
+async def azure_login(auth_service: auth_service_deps):
     url = await auth_service.get_azure_login_url()
     return RedirectResponse(url)
 
