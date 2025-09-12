@@ -8,6 +8,7 @@ from app.core.schemas import PaginatedResponse
 from app.core.schemas.quiz_schemas import (
     AttemptQuizInputSchema,
     AttemptQuizOutputSchema,
+    QuizAttemptRedisSchema,
     QuizInputSchema,
     QuizOutputSchema,
 )
@@ -70,3 +71,15 @@ async def attempt_quiz(
         quiz_payload=quiz_payload, quiz_id=quiz_id, company_id=company_id, user=current_user
     )
     return attempt
+
+@router.get("/{quiz_id}/{company_id}/attempts", response_model=QuizAttemptRedisSchema, status_code=status.HTTP_200_OK, description="Get quiz attempts from Redis for 48 hours")
+async def get_quiz_attempts(
+    quiz_id: UUID,
+    company_id: UUID,
+    quiz_service: quiz_service_deps,
+    current_user: current_user_deps
+) -> QuizAttemptRedisSchema:
+    attempts = await quiz_service.get_quiz_attempts(
+        quiz_id=quiz_id, company_id=company_id, user=current_user
+    )
+    return attempts

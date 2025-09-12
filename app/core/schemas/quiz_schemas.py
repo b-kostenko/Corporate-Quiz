@@ -51,12 +51,31 @@ class QuizOutputSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class AnswerUserResultSchema(BaseModel):
+    answer_text: str = Field(..., max_length=500)
+    is_correct: bool
+
+
+class QuestionUserResultSchema(BaseModel):
+    question_text: str = Field(..., max_length=500)
+    answers: list[AnswerUserResultSchema]
+
+class QuizAttemptRedisSchema(BaseModel):
+    user_id: UUID
+    company_id: UUID
+    quiz_id: UUID
+    score: float
+    total_questions: int
+    correct_answers_count: int
+    answers_detail: list[QuestionUserResultSchema]
 
 class QuizResultSchema(BaseModel):
     score: float
     total_questions: int
     correct_answers_count: int
 
+class AttemptQuizResultSchema(QuizResultSchema):
+    answers_detail: list[QuestionUserResultSchema]
 
 class AttemptQuizInputSchema(BaseModel):
     questions: list[QuestionInputSchema]

@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.interfaces.quiz_repo_interface import AbstractQuizRepository
-from app.core.schemas.quiz_schemas import AnswerInputSchema, QuestionInputSchema, QuizInputSchema, QuizResultSchema
+from app.core.schemas.quiz_schemas import (
+    AnswerInputSchema,
+    AttemptQuizResultSchema,
+    QuestionInputSchema,
+    QuizInputSchema,
+)
 from app.infrastructure.postgres.models import Answer, Company, Question, Quiz, User
 from app.infrastructure.postgres.models.quiz import UserQuizAttempt
 from app.infrastructure.postgres.session_manager import provide_async_session
@@ -87,7 +92,7 @@ class QuizRepository(AbstractQuizRepository):
 
     @provide_async_session
     async def record_quiz_attempt(
-        self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema, session: AsyncSession
+        self, user: User, quiz: Quiz, company: Company, score: AttemptQuizResultSchema, session: AsyncSession
     ) -> UserQuizAttempt:
         user_quiz_attempt = UserQuizAttempt(
             user_id=user.id,

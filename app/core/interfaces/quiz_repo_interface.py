@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.core.schemas.quiz_schemas import QuizInputSchema, QuizResultSchema
+from app.core.schemas.quiz_schemas import AttemptQuizResultSchema, QuizInputSchema
 from app.infrastructure.postgres.models import Company, Quiz, User
 
 
@@ -32,6 +32,6 @@ class AbstractQuizRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def record_quiz_attempt(self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema):
+    async def record_quiz_attempt(self, user: User, quiz: Quiz, company: Company, score: AttemptQuizResultSchema):
         """Record an attempt for a quiz by a user."""
         raise NotImplementedError

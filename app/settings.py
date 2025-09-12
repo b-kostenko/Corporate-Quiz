@@ -62,6 +62,14 @@ class FileStorageSettings(BaseSettings):
     max_file_size: int = Field(default=10 * 1024 * 1024, alias="STORAGE_MAX_FILE_SIZE")  # 10MB
     model_config = SettingsConfigDict(env_file=".env", env_prefix="STORAGE_", extra="ignore")
 
+class RedisSettings(BaseSettings):
+    REDIS_HOST: str = Field(..., alias="REDIS_HOST")
+    REDIS_PORT: int = Field(..., alias="REDIS_PORT")
+    REDIS_DB: int = Field(0, alias="REDIS_DB")
+    REDIS_DB_QUIZ_ANSWERS: int = Field(0, alias="REDIS_DB_QUIZ_ANSWERS")
+    REDIS_PASSWORD: str | None = Field(None, alias="REDIS_PASSWORD")
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="REDIS_", extra="ignore")
 
 class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
@@ -77,6 +85,7 @@ class Settings(BaseSettings):
     azure_sso: AzureSSOSettings = AzureSSOSettings()
     google_sso: GoogleSSOSettings = GoogleSSOSettings()
     smtp: SMTPSettings = SMTPSettings()
+    redis: RedisSettings = RedisSettings()
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

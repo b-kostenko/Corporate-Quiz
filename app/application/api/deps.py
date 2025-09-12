@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.core.repositories.company_repository import CompanyRepository
 from app.core.repositories.quiz_repository import QuizRepository
+from app.core.repositories.redis_repository import AsyncRedisRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
 from app.core.services.company_service import CompanyService
@@ -72,12 +73,24 @@ def get_file_storage() -> FileStorageInterface:
 def get_quiz_repository() -> QuizRepository:
     return QuizRepository()
 
+def get_redis_repository() -> AsyncRedisRepository:
+    return AsyncRedisRepository(
+        host=settings.redis.REDIS_HOST,
+        port=settings.redis.REDIS_PORT,
+        db=settings.redis.REDIS_DB_QUIZ_ANSWERS,
+        password=settings.redis.REDIS_PASSWORD
+    )
 
 def get_quiz_service(
     company_repository: CompanyRepository = Depends(get_company_repository),
     quiz_repository: QuizRepository = Depends(get_quiz_repository),
+    redis_repository: AsyncRedisRepository = Depends(get_redis_repository),
 ) -> QuizService:
-    return QuizService(company_repository=company_repository, quiz_repository=quiz_repository)
+    return QuizService(
+        company_repository=company_repository,
+        quiz_repository=quiz_repository,
+        redis_repository=redis_repository
+    )
 
 
 
