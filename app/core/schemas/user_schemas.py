@@ -43,6 +43,14 @@ class UserPasswordUpdateSchema(BaseModel):
         str_min_length = 1  # Ensure that passwords are not empty
 
 
+class ResetPasswordSchema(BaseModel):
+    """Schema for resetting user password."""
+    new_password: str
+
+    class Config:
+        str_min_length = 1
+
+
 class UserLoginSchema(BaseModel):
     """Schema for user login data."""
 
@@ -56,6 +64,7 @@ class UserLoginSchema(BaseModel):
 class TokenType(str, Enum):
     ACCESS = "access"
     REFRESH = "refresh"
+    RESET_PASSWORD = "reset_password"
 
 
 class TokenSchema(BaseModel):

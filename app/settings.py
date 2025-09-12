@@ -4,6 +4,15 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class SMTPSettings(BaseSettings):
+    SMTP_EMAIL_HOST: str = Field(..., alias="SMTP_EMAIL_HOST")
+    SMTP_EMAIL_PORT: int = Field(..., alias="SMTP_EMAIL_PORT")
+    SMTP_EMAIL_USERNAME: str = Field(..., alias="SMTP_EMAIL_USERNAME")
+    SMTP_EMAIL_PASSWORD: str = Field(..., alias="SMTP_EMAIL_PASSWORD")
+    SMTP_FROM_EMAIL: str = Field(..., alias="SMTP_FROM_EMAIL")
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="SMTP_", extra="ignore")
+
 class GoogleSSOSettings(BaseSettings):
     GOOGLE_CLIENT_ID: str = Field(..., alias="GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str = Field(..., alias="GOOGLE_CLIENT_SECRET")
@@ -29,7 +38,9 @@ class TokenSettings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_MINUTES: int
+    RESET_PASSWORD_TOKEN_EXPIRE_MINUTES: int
     TOKEN_TYPE: str
+
     model_config = SettingsConfigDict(env_file=".env", env_prefix="JWT_", extra="ignore")
 
 
@@ -55,13 +66,17 @@ class FileStorageSettings(BaseSettings):
 class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-
+    BASE_URL: str = Field(default="http://localhost:8000", alias="BASE_URL")
     DATABASE_URL: str
+    TEMPLATES_DIR: Path = Path("app/templates")
+
+
     token: TokenSettings = TokenSettings()
     celery: CelerySettings = CelerySettings()
     file_storage: FileStorageSettings = FileStorageSettings()
     azure_sso: AzureSSOSettings = AzureSSOSettings()
     google_sso: GoogleSSOSettings = GoogleSSOSettings()
+    smtp: SMTPSettings = SMTPSettings()
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -9,6 +9,7 @@ from app.core.repositories.quiz_repository import QuizRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
 from app.core.services.company_service import CompanyService
+from app.core.services.notification_service import AsyncEmailSender
 from app.core.services.quiz_service import QuizService
 from app.core.services.user_service import UserService
 from app.infrastructure.postgres.models import User
@@ -16,6 +17,16 @@ from app.infrastructure.storage import create_local_storage
 from app.settings import settings
 
 http_bearer = HTTPBearer()
+
+
+def get_email_sender() -> AsyncEmailSender:
+    return AsyncEmailSender(
+        host=settings.smtp.SMTP_EMAIL_HOST,
+        port=settings.smtp.SMTP_EMAIL_PORT,
+        username=settings.smtp.SMTP_EMAIL_USERNAME,
+        password=settings.smtp.SMTP_EMAIL_PASSWORD,
+        templates_dir=settings.TEMPLATES_DIR
+    )
 
 
 def get_user_repository() -> UserRepository:
@@ -26,8 +37,14 @@ def get_user_service(user_repository: UserRepository = Depends(get_user_reposito
     return UserService(user_repository=user_repository)
 
 
-def get_auth_service(user_repository: UserRepository = Depends(get_user_repository)) -> AuthService:
-    return AuthService(user_repository=user_repository)
+def get_auth_service(
+        user_repository: UserRepository = Depends(get_user_repository),
+        email_sender: AsyncEmailSender = Depends(get_email_sender)
+) -> AuthService:
+    return AuthService(
+        user_repository=user_repository,
+        email_sender=email_sender
+    )
 
 
 user_service_deps = Annotated[UserService, Depends(get_user_service)]
@@ -61,6 +78,7 @@ def get_quiz_service(
     quiz_repository: QuizRepository = Depends(get_quiz_repository),
 ) -> QuizService:
     return QuizService(company_repository=company_repository, quiz_repository=quiz_repository)
+
 
 
 current_user_deps = Annotated[User, Depends(get_current_user)]

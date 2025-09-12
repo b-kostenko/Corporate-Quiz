@@ -5,16 +5,19 @@ from pydantic import EmailStr
 from app.core.repositories.user_repository import AbstractUserRepository
 from app.core.schemas.auth_schemas import AzureAuthorizationResponse, GoogleAuthorizationResponse
 from app.core.schemas.user_schemas import TokenSchema, TokenType, UserInputSchema
+from app.core.services.notification_service import AsyncEmailSender
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.jwt import create_token, decode_token, verify_token
 from app.infrastructure.security.password import hash_password, verify_password
 from app.settings import settings
+from app.utils.common import force_bytes, urlsafe_base64_decode, urlsafe_base64_encode
 from app.utils.exceptions import InvalidCredentials, ObjectNotFound
 
 
 class AuthService:
-    def __init__(self, user_repository: AbstractUserRepository):
+    def __init__(self, user_repository: AbstractUserRepository, email_sender: AsyncEmailSender):
         self.user_repository: AbstractUserRepository = user_repository
+        self.email_sender: AsyncEmailSender = email_sender
 
     async def get_current_user(self, token: str) -> User:
         verify = verify_token(token=token, token_type=TokenType.ACCESS)
@@ -83,6 +86,43 @@ class AuthService:
 
         hashed_new_password = hash_password(new_password)
         await self.user_repository.update_password(user=user, new_password=hashed_new_password)
+
+    async def reset_password(self, email: EmailStr) -> None:
+        user = await self.user_repository.get(email)
+        if not user:
+            raise ObjectNotFound(model_name="User", id_=email)
+
+        uid = urlsafe_base64_encode(force_bytes(str(user.email)))
+        token = create_token(
+            payload={"sub": user.email},
+            token_type=TokenType.RESET_PASSWORD,
+            expire_minutes=settings.token.RESET_PASSWORD_TOKEN_EXPIRE_MINUTES,
+        )
+        reset_link = f"{settings.BASE_URL}/confirm-reset-password?uid={uid}&token={token}"
+
+        payload = {
+            "user_name": user.first_name,
+            "reset_link": reset_link
+        }
+
+        await self.email_sender.send_email(
+            subject="Password Reset Request",
+            to_emails=[email],
+            template="reset_password.html",
+            payload=payload,
+        )
+
+    async def confirm_reset_password(self, token: str, uid: str, new_password: str) -> None:
+        email = urlsafe_base64_decode(uid).decode()
+        user = await self.user_repository.get(email)
+
+        verify = verify_token(token=token, token_type=TokenType.RESET_PASSWORD)
+        if not user or not verify:
+            raise InvalidCredentials("Invalid or expired reset token")
+
+        hashed_new_password = hash_password(new_password)
+        await self.user_repository.update_password(user=user, new_password=hashed_new_password)
+
 
     async def get_azure_login_url(self, state: str | None = None, nonce: str | None = None) -> str:
         """Generate Azure AD OAuth2 authorization URL"""

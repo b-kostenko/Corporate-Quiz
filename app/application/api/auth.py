@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Form
+from pydantic import EmailStr
 from starlette import status
 from starlette.responses import RedirectResponse
 
 from app.application.api.deps import auth_service_deps, current_user_deps
 from app.core.schemas.user_schemas import (
     RefreshTokenRequestSchema,
+    ResetPasswordSchema,
     TokenSchema,
     UserLoginSchema,
     UserPasswordUpdateSchema,
@@ -28,6 +30,15 @@ async def change_password(payload: UserPasswordUpdateSchema, auth_service: auth_
     await auth_service.change_password(
         email=current_user.email, old_password=payload.old_password, new_password=payload.new_password
     )
+
+@router.post("/reset-password", response_model=None, status_code=status.HTTP_200_OK, description="Reset password")
+async def reset_password(email: EmailStr, auth_service: auth_service_deps = auth_service_deps):
+    await auth_service.reset_password(email=email)
+
+
+@router.post("/confirm-reset-password", response_model=None, status_code=status.HTTP_200_OK, description="Confirm reset password")
+async def confirm_reset_password(payload: ResetPasswordSchema, token: str, uid: str, auth_service: auth_service_deps = auth_service_deps):
+    await auth_service.confirm_reset_password(token=token, uid=uid, new_password=payload.new_password)
 
 
 @router.get("/azure/login", response_model=None, status_code=status.HTTP_200_OK, description="Azure SSO login")
