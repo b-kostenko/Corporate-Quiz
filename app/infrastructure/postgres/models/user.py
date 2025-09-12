@@ -14,6 +14,4 @@ class User(BaseModelMixin):
     password: Mapped[str] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(200))
 
-    quiz_attempts = relationship(
-        "UserQuizAttempt", back_populates="user"
-    )
+    quiz_attempts = relationship("UserQuizAttempt", back_populates="user")

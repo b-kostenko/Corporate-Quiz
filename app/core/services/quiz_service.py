@@ -2,15 +2,14 @@ from uuid import UUID
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.core.interfaces.quiz_repo_interface import AbstractQuizRepository
-from app.core.schemas import PaginationMeta, PaginatedResponse
-from app.core.schemas.quiz_schemas import QuizInputSchema, QuizOutputSchema, AttemptQuizInputSchema, QuizResultSchema
-from app.infrastructure.postgres.models import User, Quiz
+from app.core.schemas import PaginatedResponse, PaginationMeta
+from app.core.schemas.quiz_schemas import AttemptQuizInputSchema, QuizInputSchema, QuizOutputSchema, QuizResultSchema
+from app.infrastructure.postgres.models import Quiz, User
 from app.infrastructure.postgres.models.enums import CompanyMemberRole
 from app.utils.exceptions import ObjectNotFound, PermissionDenied
 
 
 class QuizService:
-
     def __init__(self, company_repository: AbstractCompanyRepository, quiz_repository: AbstractQuizRepository):
         self.company_repository: AbstractCompanyRepository = company_repository
         self.quiz_repository: AbstractQuizRepository = quiz_repository
@@ -73,11 +72,7 @@ class QuizService:
         quiz_schemas = [QuizOutputSchema.model_validate(quiz) for quiz in quizzes]
 
         meta = PaginationMeta(
-            total=total,
-            limit=limit,
-            offset=offset,
-            has_next=offset + limit < total,
-            has_previous=offset > 0
+            total=total, limit=limit, offset=offset, has_next=offset + limit < total, has_previous=offset > 0
         )
         return PaginatedResponse[QuizOutputSchema](items=quiz_schemas, meta=meta)
 
@@ -98,9 +93,7 @@ class QuizService:
 
         score_percent = round((correct_count / total_questions) * 100, 2)
         return QuizResultSchema(
-            score=score_percent,
-            total_questions=total_questions,
-            correct_answers_count=correct_count
+            score=score_percent, total_questions=total_questions, correct_answers_count=correct_count
         )
 
     async def attempt_quiz(self, quiz_payload: AttemptQuizInputSchema, quiz_id: UUID, company_id: UUID, user: User):
@@ -120,4 +113,3 @@ class QuizService:
 
         attempt = await self.quiz_repository.record_quiz_attempt(user=user, quiz=quiz, company=company, score=result)
         return attempt
-

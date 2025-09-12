@@ -7,4 +7,3 @@ def test_task() -> str:
     A simple test task to verify Celery setup.
     """
     return "Celery is working!"
-

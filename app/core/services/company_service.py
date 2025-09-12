@@ -1,13 +1,16 @@
 from uuid import UUID
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.core.schemas.company_schemas import CompanyInputSchema, CompanyOutputSchema, CompanyMemberOutputSchema, \
-    CompanyMemberUserSchema
-
+from app.core.schemas.company_schemas import (
+    CompanyInputSchema,
+    CompanyMemberOutputSchema,
+    CompanyMemberUserSchema,
+    CompanyOutputSchema,
+)
 from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMeta
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation
-from app.infrastructure.postgres.models.enums import InvitationStatus, CompanyMemberRole
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
 from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, UnauthorizedAction
 
 
@@ -59,19 +62,15 @@ class CompanyService:
         companies, total = await self.company_repository.get_companies_for_owner_paginated(
             owner_id=user.id, limit=limit, offset=offset
         )
-        
+
         # Convert to output schemas
         company_schemas = [CompanyOutputSchema.model_validate(company) for company in companies]
-        
+
         # Create pagination metadata
         meta = PaginationMeta(
-            total=total,
-            limit=limit,
-            offset=offset,
-            has_next=offset + limit < total,
-            has_previous=offset > 0
+            total=total, limit=limit, offset=offset, has_next=offset + limit < total, has_previous=offset > 0
         )
-        
+
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
 
     async def change_status(self, company_id: UUID, user: User, company_status: str) -> CompanyOutputSchema:
@@ -100,16 +99,12 @@ class CompanyService:
 
         # Create pagination metadata
         meta = PaginationMeta(
-            total=total,
-            limit=limit,
-            offset=offset,
-            has_next=offset + limit < total,
-            has_previous=offset > 0
+            total=total, limit=limit, offset=offset, has_next=offset + limit < total, has_previous=offset > 0
         )
 
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
 
-    async def invite_user_to_company(self,company_id: UUID, invite_user: User, user: User) -> CompanyInvitation:
+    async def invite_user_to_company(self, company_id: UUID, invite_user: User, user: User) -> CompanyInvitation:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -166,7 +161,6 @@ class CompanyService:
 
         await self.company_repository.cancel_company_invitation(invitation=invitation)
 
-
     async def get_invitations_for_user(self, user: User) -> list[CompanyInvitation]:
         invitations = await self.company_repository.get_invitations_for_user(user=user)
         return invitations
@@ -190,16 +184,16 @@ class CompanyService:
         if invite_exists:
             raise ObjectAlreadyExists(message="You have already requested membership or are a member of the company.")
 
-        await self.company_repository.invite_user_to_company(
-            company=company, invite_user=user, invited_by=user
-        )
+        await self.company_repository.invite_user_to_company(company=company, invite_user=user, invited_by=user)
 
     async def leave_company(self, company_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
-        user_is_company_member = await self.company_repository.check_if_user_is_company_member(company=company, user_id=user.id)
+        user_is_company_member = await self.company_repository.check_if_user_is_company_member(
+            company=company, user_id=user.id
+        )
         if not user_is_company_member:
             raise ObjectNotFound(model_name="Company Member", id_=user.id)
 
@@ -215,13 +209,14 @@ class CompanyService:
         members = await self.company_repository.get_company_members(company=company)
 
         # Create user schemas with roles
-        users_schemas = [CompanyMemberUserSchema.from_models(user=user, company_member=company_member) for user, company_member in members]
+        users_schemas = [
+            CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
+            for user, company_member in members
+        ]
 
-
-        company_schema = CompanyMemberOutputSchema.model_validate({
-            **CompanyOutputSchema.model_validate(company).model_dump(),
-            "users": users_schemas
-        })
+        company_schema = CompanyMemberOutputSchema.model_validate(
+            {**CompanyOutputSchema.model_validate(company).model_dump(), "users": users_schemas}
+        )
         return company_schema
 
     async def remove_user_from_company(self, company_id: UUID, user_id: UUID, user: User) -> None:
@@ -229,13 +224,17 @@ class CompanyService:
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
-        user_is_company_member = await self.company_repository.check_if_user_is_company_member(company=company, user_id=user_id)
+        user_is_company_member = await self.company_repository.check_if_user_is_company_member(
+            company=company, user_id=user_id
+        )
         if not user_is_company_member:
             raise ObjectNotFound(model_name="Company Member", id_=user_id)
 
         await self.company_repository.remove_user_from_company(company=company, user_id=user_id, user=user)
 
-    async def change_member_role(self, company_id: UUID, user_id: UUID, new_role: CompanyMemberRole, user: User) -> CompanyMemberUserSchema:
+    async def change_member_role(
+        self, company_id: UUID, user_id: UUID, new_role: CompanyMemberRole, user: User
+    ) -> CompanyMemberUserSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -264,7 +263,9 @@ class CompanyService:
         admin_members = [(user, member) for user, member in members if member.role == CompanyMemberRole.ADMIN]
 
         # Create user schemas with roles
-        users_schemas = [CompanyMemberUserSchema.from_models(user=user, company_member=company_member) for user, company_member in admin_members]
+        users_schemas = [
+            CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
+            for user, company_member in admin_members
+        ]
 
         return users_schemas
-

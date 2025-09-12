@@ -1,13 +1,13 @@
 from typing import Sequence, Tuple
-
 from uuid import UUID
-from sqlalchemy import select, func
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import InvitationStatus, CompanyMemberRole
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -20,7 +20,9 @@ class CompanyRepository(AbstractCompanyRepository):
         return company
 
     @provide_async_session
-    async def check_if_company_exists(self, company_email: str, owner_id: UUID, session: AsyncSession) -> Company | None:
+    async def check_if_company_exists(
+        self, company_email: str, owner_id: UUID, session: AsyncSession
+    ) -> Company | None:
         query = select(Company).where(Company.company_email == company_email, Company.owner_id == owner_id)
         company = await session.execute(query)
         return company.scalar_one_or_none()
@@ -84,7 +86,9 @@ class CompanyRepository(AbstractCompanyRepository):
         return True
 
     @provide_async_session
-    async def get_all_companies_paginated(self, limit: int, offset: int, session: AsyncSession) -> Tuple[list[Company], int]:
+    async def get_all_companies_paginated(
+        self, limit: int, offset: int, session: AsyncSession
+    ) -> Tuple[list[Company], int]:
         """Get paginated companies with total count."""
         # Get total count
         count_query = select(func.count(Company.id))
@@ -92,25 +96,17 @@ class CompanyRepository(AbstractCompanyRepository):
         total = total_result.scalar()
 
         # Get paginated results
-        query = (
-            select(Company)
-            .order_by(Company.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+        query = select(Company).order_by(Company.created_at.desc()).limit(limit).offset(offset)
         result = await session.execute(query)
         companies = result.scalars().all()
 
         return list(companies), total
 
-
     @provide_async_session
-    async def invite_user_to_company(self, company: Company, invite_user: User, invited_by: User, session: AsyncSession) -> CompanyInvitation:
-        query = {
-            "company_id": company.id,
-            "invited_user_id": invite_user.id,
-            "invited_by_id": invited_by.id
-        }
+    async def invite_user_to_company(
+        self, company: Company, invite_user: User, invited_by: User, session: AsyncSession
+    ) -> CompanyInvitation:
+        query = {"company_id": company.id, "invited_user_id": invite_user.id, "invited_by_id": invited_by.id}
         invitation = CompanyInvitation(**query)
         session.add(invitation)
         await session.commit()
@@ -118,18 +114,22 @@ class CompanyRepository(AbstractCompanyRepository):
         return invitation
 
     @provide_async_session
-    async def check_if_invite_exists(self, company: Company, invite_user: User, status: InvitationStatus, session: AsyncSession) -> CompanyInvitation | None:
+    async def check_if_invite_exists(
+        self, company: Company, invite_user: User, status: InvitationStatus, session: AsyncSession
+    ) -> CompanyInvitation | None:
         query = select(CompanyInvitation).where(
             CompanyInvitation.company_id == company.id,
             CompanyInvitation.invited_user_id == invite_user.id,
-            CompanyInvitation.status == status
+            CompanyInvitation.status == status,
         )
         result = await session.execute(query)
         return result.scalar_one_or_none()
 
     @provide_async_session
     async def get_invitation_by_id(self, invitation_id: UUID, session: AsyncSession) -> CompanyInvitation | None:
-        query = select(CompanyInvitation).where(CompanyInvitation.id == invitation_id, CompanyInvitation.status == InvitationStatus.PENDING)
+        query = select(CompanyInvitation).where(
+            CompanyInvitation.id == invitation_id, CompanyInvitation.status == InvitationStatus.PENDING
+        )
         result = await session.execute(query)
         return result.scalar_one_or_none()
 
@@ -148,21 +148,21 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.refresh(invitation)
 
     @provide_async_session
-    async def add_user_to_company(self, company: Company, user_id: UUID, role: CompanyMemberRole, session: AsyncSession) -> None:
-        query = {
-            "company_id": company.id,
-            "user_id": user_id,
-            "role": role
-        }
+    async def add_user_to_company(
+        self, company: Company, user_id: UUID, role: CompanyMemberRole, session: AsyncSession
+    ) -> None:
+        query = {"company_id": company.id, "user_id": user_id, "role": role}
         company_member = CompanyMember(**query)
         session.add(company_member)
         await session.commit()
         await session.refresh(company_member)
 
     @provide_async_session
-    async def get_company_members(self, company: Company, session: AsyncSession) -> Sequence[tuple[User, CompanyMember]]:
+    async def get_company_members(
+        self, company: Company, session: AsyncSession
+    ) -> Sequence[tuple[User, CompanyMember]]:
         """Get users of a company with their membership information.
-        
+
         Returns:
             Sequence of tuples containing (User, CompanyMember) pairs,
             where User contains user data and CompanyMember contains role and membership info.
@@ -181,13 +181,9 @@ class CompanyRepository(AbstractCompanyRepository):
     @provide_async_session
     async def get_company_member(self, company: Company, user_id: UUID, session: AsyncSession) -> CompanyMember | None:
         """Get a specific company member."""
-        query = select(CompanyMember).where(
-            CompanyMember.company_id == company.id,
-            CompanyMember.user_id == user_id
-        )
+        query = select(CompanyMember).where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
         result = await session.execute(query)
         return result.scalars().first()
-
 
     @provide_async_session
     async def cancel_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
@@ -210,21 +206,17 @@ class CompanyRepository(AbstractCompanyRepository):
 
     @provide_async_session
     async def check_if_user_is_company_member(self, company: Company, user_id: UUID, session: AsyncSession) -> bool:
-        query = select(CompanyMember).where(
-            CompanyMember.company_id == company.id,
-            CompanyMember.user_id == user_id
-        )
+        query = select(CompanyMember).where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
 
         result = await session.execute(query)
         company_member = result.scalar_one_or_none()
         return company_member is not None
 
     @provide_async_session
-    async def remove_user_from_company(self, company: Company, user_id: UUID, user: User, session: AsyncSession) -> None:
-        query = select(CompanyMember).where(
-            CompanyMember.company_id == company.id,
-            CompanyMember.user_id == user_id
-        )
+    async def remove_user_from_company(
+        self, company: Company, user_id: UUID, user: User, session: AsyncSession
+    ) -> None:
+        query = select(CompanyMember).where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
         result = await session.execute(query)
         company_member = result.scalar_one_or_none()
 
@@ -232,14 +224,13 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.commit()
 
     @provide_async_session
-    async def change_member_role(self, company: Company, user_id: UUID, new_role: CompanyMemberRole, session: AsyncSession) -> tuple[User, CompanyMember] | None:
+    async def change_member_role(
+        self, company: Company, user_id: UUID, new_role: CompanyMemberRole, session: AsyncSession
+    ) -> tuple[User, CompanyMember] | None:
         query = (
             select(User, CompanyMember)
             .join(CompanyMember, CompanyMember.user_id == User.id)
-            .where(
-                CompanyMember.company_id == company.id,
-                CompanyMember.user_id == user_id
-            )
+            .where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
         )
         result = await session.execute(query)
         user, company_member = result.one_or_none()

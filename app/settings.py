@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,6 +24,7 @@ class CelerySettings(BaseSettings):
 
 class FileStorageSettings(BaseSettings):
     """Settings for file storage configuration."""
+
     base_path: Path = Field(default=Path("media"), alias="STORAGE_BASE_PATH")
     base_url: str = Field(default="http://localhost:8000", alias="STORAGE_BASE_URL")
     allowed_extensions: list[str] = Field(default=[".jpg", ".jpeg", ".png", ".gif", ".webp"], alias="STORAGE_ALLOWED_EXTENSIONS")

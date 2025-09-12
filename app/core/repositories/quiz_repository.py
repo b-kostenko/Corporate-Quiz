@@ -1,19 +1,17 @@
 from uuid import UUID
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.interfaces.quiz_repo_interface import AbstractQuizRepository
-from app.core.schemas.quiz_schemas import QuizInputSchema, AnswerInputSchema, QuestionInputSchema, QuizResultSchema
-from app.infrastructure.postgres.models import Company, Quiz, Question, Answer, User
+from app.core.schemas.quiz_schemas import AnswerInputSchema, QuestionInputSchema, QuizInputSchema, QuizResultSchema
+from app.infrastructure.postgres.models import Answer, Company, Question, Quiz, User
 from app.infrastructure.postgres.models.quiz import UserQuizAttempt
-
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
 class QuizRepository(AbstractQuizRepository):
-
     @provide_async_session
     async def create(self, company: Company, quiz_payload: QuizInputSchema, session: AsyncSession) -> Quiz:
         quiz = await self._create_quiz(company=company, quiz_payload=quiz_payload, session=session)
@@ -29,17 +27,19 @@ class QuizRepository(AbstractQuizRepository):
 
     @provide_async_session
     async def get(self, quiz_id: UUID, company: Company, session: AsyncSession) -> Quiz | None:
-        stmt = select(Quiz).options(
-            selectinload(Quiz.questions).selectinload(Question.answers)
-        ).where(Quiz.id == quiz_id, Quiz.company_id == company.id)
+        stmt = (
+            select(Quiz)
+            .options(selectinload(Quiz.questions).selectinload(Question.answers))
+            .where(Quiz.id == quiz_id, Quiz.company_id == company.id)
+        )
         result = await session.execute(stmt)
         return result.scalars().one_or_none()
 
     @provide_async_session
     async def get_by_id(self, quiz_id: UUID, session: AsyncSession) -> Quiz | None:
-        stmt = select(Quiz).options(
-            selectinload(Quiz.questions).selectinload(Question.answers)
-        ).where(Quiz.id == quiz_id)
+        stmt = (
+            select(Quiz).options(selectinload(Quiz.questions).selectinload(Question.answers)).where(Quiz.id == quiz_id)
+        )
         result = await session.execute(stmt)
         return result.scalars().one_or_none()
 
@@ -48,7 +48,9 @@ class QuizRepository(AbstractQuizRepository):
         updated_quiz = await self._update_quiz(quiz=quiz, quiz_payload=quiz_payload, session=session)
         # Update questions and answers logic would go here
         for question in quiz_payload.questions:
-            updated_question = await self._update_questions(quiz=updated_quiz, question_payload=question, session=session)
+            updated_question = await self._update_questions(
+                quiz=updated_quiz, question_payload=question, session=session
+            )
             for answer in question.answers:
                 await self._update_answers(question=updated_question, answer_payload=answer, session=session)
 
@@ -63,7 +65,9 @@ class QuizRepository(AbstractQuizRepository):
         return None
 
     @provide_async_session
-    async def get_quizzes_by_company(self, company: Company, limit: int, offset: int, session: AsyncSession) -> tuple[list[Quiz], int]:
+    async def get_quizzes_by_company(
+        self, company: Company, limit: int, offset: int, session: AsyncSession
+    ) -> tuple[list[Quiz], int]:
         # Get total count
         count_query = select(func.count(Quiz.id))
         total_result = await session.execute(count_query)
@@ -82,7 +86,9 @@ class QuizRepository(AbstractQuizRepository):
         return list(quizzes), total
 
     @provide_async_session
-    async def record_quiz_attempt(self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema, session: AsyncSession) -> UserQuizAttempt:
+    async def record_quiz_attempt(
+        self, user: User, quiz: Quiz, company: Company, score: QuizResultSchema, session: AsyncSession
+    ) -> UserQuizAttempt:
         user_quiz_attempt = UserQuizAttempt(
             user_id=user.id,
             quiz_id=quiz.id,
@@ -113,7 +119,9 @@ class QuizRepository(AbstractQuizRepository):
         return result.scalar_one()
 
     @provide_async_session
-    async def _update_questions(self, quiz: Quiz, question_payload: QuestionInputSchema, session: AsyncSession) -> Question:
+    async def _update_questions(
+        self, quiz: Quiz, question_payload: QuestionInputSchema, session: AsyncSession
+    ) -> Question:
         smtp = (
             update(Question)
             .where(Question.quiz_id == quiz.id)
@@ -127,7 +135,9 @@ class QuizRepository(AbstractQuizRepository):
         return result.scalar_one()
 
     @provide_async_session
-    async def _update_answers(self, question: Question, answer_payload: AnswerInputSchema, session: AsyncSession) -> Answer:
+    async def _update_answers(
+        self, question: Question, answer_payload: AnswerInputSchema, session: AsyncSession
+    ) -> Answer:
         smtp = (
             update(Answer)
             .where(Answer.question_id == question.id)
@@ -153,7 +163,9 @@ class QuizRepository(AbstractQuizRepository):
         return quiz
 
     @provide_async_session
-    async def _create_questions(self, quiz_id: UUID, question_payload: QuestionInputSchema, session: AsyncSession) -> Question:
+    async def _create_questions(
+        self, quiz_id: UUID, question_payload: QuestionInputSchema, session: AsyncSession
+    ) -> Question:
         question = Question(
             quiz_id=quiz_id,
             question_text=question_payload.question_text,
@@ -163,7 +175,9 @@ class QuizRepository(AbstractQuizRepository):
         return question
 
     @provide_async_session
-    async def _create_answers(self, question_id: UUID, answer_payload: AnswerInputSchema, session: AsyncSession) -> Answer:
+    async def _create_answers(
+        self, question_id: UUID, answer_payload: AnswerInputSchema, session: AsyncSession
+    ) -> Answer:
         answer = Answer(
             question_id=question_id,
             answer_text=answer_payload.answer_text,

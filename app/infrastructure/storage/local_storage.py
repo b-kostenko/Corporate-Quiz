@@ -13,10 +13,10 @@ class LocalFileStorage(FileStorageInterface):
     def __init__(self, settings: FileStorageSettings):
         self.settings = settings
         self.base_path = settings.base_path
-        self.base_url = settings.base_url.rstrip('/')
+        self.base_url = settings.base_url.rstrip("/")
         self.allowed_extensions = settings.allowed_extensions
         self.max_file_size = settings.max_file_size
-        
+
         # Ensure base directory exists
         self.base_path.mkdir(parents=True, exist_ok=True)
 
@@ -45,15 +45,15 @@ class LocalFileStorage(FileStorageInterface):
         """Save a file and return its URL."""
         # Validate file
         self._validate_file(content, filename)
-        
+
         # Generate unique filename
         unique_filename = self._generate_unique_filename(filename)
         file_path = self.base_path / unique_filename
-        
+
         # Write file asynchronously
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._write_file_sync, file_path, content)
-        
+
         # Return full URL
         return self._get_file_url(unique_filename)
 
@@ -65,10 +65,10 @@ class LocalFileStorage(FileStorageInterface):
     async def delete_file(self, filename: str) -> bool:
         """Delete a file by its filename."""
         file_path = self.base_path / filename
-        
+
         if not file_path.exists():
             return False
-        
+
         loop = asyncio.get_event_loop()
         try:
             await loop.run_in_executor(None, file_path.unlink)

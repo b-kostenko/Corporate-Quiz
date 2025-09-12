@@ -84,8 +84,8 @@ Before running the application, ensure you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd Project_one
+   git clone https://github.com/b-kostenko/Corporate-Quiz.git
+   cd Corporate-Quiz
    ```
 
 2. **Create environment file**:
@@ -200,6 +200,24 @@ app/
 - **Database Indexing**: Optimized queries with proper indexing
 
 ## Development
+
+### Code Quality
+```bash
+# Format code
+ruff format
+
+# Lint code
+ruff check
+
+# Fix linting issues
+ruff check --fix
+
+# Check specific file
+ruff check app/core/services/quiz_service.py
+
+# Format specific directory
+ruff format app/
+```
 
 ### Database Operations
 ```bash

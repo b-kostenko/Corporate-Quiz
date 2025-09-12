@@ -1,8 +1,6 @@
 from celery import Celery, Task
-from celery.schedules import crontab
 
 from app.settings import settings
-
 
 celery_app: Celery = Celery(
     main="app",
@@ -11,7 +9,7 @@ celery_app: Celery = Celery(
     include=[
         "app.infrastructure.celery.tasks.common",
     ],
-    task_cls=Task
+    task_cls=Task,
 )
 
 celery_app.conf.update(
@@ -26,4 +24,3 @@ celery_app.conf.beat_schedule = {
     #     "schedule": crontab(hour=0, minute=0),  # every day at 00:00
     # }
 }
-

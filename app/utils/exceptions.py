@@ -16,10 +16,12 @@ class InvalidCredentials(Exception):
     def __init__(self, message: Optional[str] = "Invalid credentials provided") -> None:
         super().__init__(message)
 
+
 class UnauthorizedAction(Exception):
     def __init__(self, message: str = "You are not allowed to perform this action."):
         self.message = message
         super().__init__(self.message)
+
 
 class PermissionDenied(Exception):
     def __init__(self, message: str = "You don't have permission to perform this action.") -> None:
