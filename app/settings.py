@@ -4,6 +4,17 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class AzureSSOSettings(BaseSettings):
+    AZURE_CLIENT_ID: str = Field(..., alias="AZURE_CLIENT_ID")
+    AZURE_TENANT_ID: str = Field(..., alias="AZURE_TENANT_ID")
+    AZURE_CLIENT_SECRET: str = Field(..., alias="AZURE_CLIENT_SECRET")
+    AZURE_REDIRECT_URI: str = Field(default="http://localhost:8000/auth/azure/callback", alias="AZURE_REDIRECT_URI")
+    AZURE_AUTHORITY: str = Field(default="https://login.microsoftonline.com", alias="AZURE_AUTHORITY")
+    AZURE_SCOPES: list[str] = ["openid"]
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="AZURE_", extra="ignore")
+
+
 class TokenSettings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
@@ -40,6 +51,7 @@ class Settings(BaseSettings):
     token: TokenSettings = TokenSettings()
     celery: CelerySettings = CelerySettings()
     file_storage: FileStorageSettings = FileStorageSettings()
+    azure_sso: AzureSSOSettings = AzureSSOSettings()
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

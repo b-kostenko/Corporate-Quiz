@@ -13,10 +13,9 @@ def create_token(payload: Dict, token_type: TokenType, expire_minutes: int) -> s
     to_encode.update({"exp": expire, "type": token_type})
     return jwt.encode(to_encode, settings.token.SECRET_KEY, algorithm=settings.token.ALGORITHM)
 
-
-def decode_token(token: str) -> Dict:
+def decode_token(token: str, key: str, options: dict, algorithms: list[str] = None) -> Dict:
     try:
-        payload = jwt.decode(token, settings.token.SECRET_KEY, algorithms=[settings.token.ALGORITHM])
+        payload = jwt.decode(jwt=token, key=key, algorithms=algorithms, options=options)
         return payload
     except jwt.ExpiredSignatureError:
         raise ValueError("Token has expired")
@@ -26,7 +25,7 @@ def decode_token(token: str) -> Dict:
 
 def verify_token(token: str, token_type: TokenType) -> bool:
     try:
-        payload = decode_token(token)
+        payload = decode_token(token=token, key=settings.token.SECRET_KEY, algorithms=[settings.token.ALGORITHM], options={})
         if payload.get("type") != token_type:
             raise ValueError("Invalid token type")
         return True

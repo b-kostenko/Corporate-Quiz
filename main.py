@@ -1,3 +1,5 @@
+import os
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -22,7 +24,9 @@ def _include_error_handlers(app: FastAPI) -> None:
 
 
 def _mount_static_files(app: FastAPI) -> None:
-    app.mount("/media", StaticFiles(directory=str(settings.file_storage.base_path)), name="media")
+    media_path = str(settings.file_storage.base_path)
+    os.makedirs(media_path, exist_ok=True)
+    app.mount("/media", StaticFiles(directory=media_path), name="media")
 
 
 def create_app() -> FastAPI:
