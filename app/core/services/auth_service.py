@@ -3,7 +3,7 @@ import secrets
 from pydantic import EmailStr
 
 from app.core.repositories.user_repository import AbstractUserRepository
-from app.core.schemas.auth_schemas import AzureAuthorizationResponse
+from app.core.schemas.auth_schemas import AzureAuthorizationResponse, GoogleAuthorizationResponse
 from app.core.schemas.user_schemas import TokenSchema, TokenType, UserInputSchema
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.jwt import create_token, decode_token, verify_token
@@ -102,6 +102,44 @@ class AuthService:
         return response.generate_url()
 
     async def handle_azure_callback(self, id_token: str) -> User:
+        token_payload = decode_token(
+            token=id_token,
+            key=settings.token.SECRET_KEY,
+            algorithms=None,
+            options={"verify_signature": False}
+        )
+
+        user_input = UserInputSchema(
+            first_name=token_payload.get("given_name"),
+            last_name=token_payload.get("family_name"),
+            email=token_payload.get("email"),
+            password=hash_password(secrets.token_urlsafe(16))
+        )
+
+        existing_user = await self.user_repository.get(email=user_input.email)
+        if existing_user:
+            return existing_user
+
+        new_user = User(**user_input.model_dump())
+        created_user = await self.user_repository.create(user=new_user)
+        return created_user
+
+
+    async def get_google_login_url(self, state: str | None = None, nonce: str | None = None) -> str:
+        state = state or GoogleAuthorizationResponse.generate_state()
+        nonce = nonce or GoogleAuthorizationResponse.generate_nonce()
+
+        response = GoogleAuthorizationResponse(
+            authorization_endpoint=settings.google_sso.GOOGLE_AUTHORITY,
+            client_id=settings.google_sso.GOOGLE_CLIENT_ID,
+            redirect_uri=settings.google_sso.GOOGLE_REDIRECT_URI,
+            state=state,
+            scope=" ".join(settings.google_sso.GOOGLE_SCOPES),
+            nonce=nonce
+        )
+        return response.generate_url()
+
+    async def handle_google_callback(self, id_token: str) -> User:
         token_payload = decode_token(
             token=id_token,
             key=settings.token.SECRET_KEY,

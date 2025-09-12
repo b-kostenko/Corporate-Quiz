@@ -4,13 +4,22 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class GoogleSSOSettings(BaseSettings):
+    GOOGLE_CLIENT_ID: str = Field(..., alias="GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: str = Field(..., alias="GOOGLE_CLIENT_SECRET")
+    GOOGLE_REDIRECT_URI: str = Field(default="http://localhost:8000/auth/google/callback", alias="GOOGLE_REDIRECT_URI")
+    GOOGLE_AUTHORITY: str = Field(default="https://accounts.google.com", alias="GOOGLE_AUTHORITY")
+    GOOGLE_SCOPES: list[str] = ["openid", "email", "profile"]
+
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="GOOGLE_", extra="ignore")
+
 class AzureSSOSettings(BaseSettings):
     AZURE_CLIENT_ID: str = Field(..., alias="AZURE_CLIENT_ID")
     AZURE_TENANT_ID: str = Field(..., alias="AZURE_TENANT_ID")
     AZURE_CLIENT_SECRET: str = Field(..., alias="AZURE_CLIENT_SECRET")
     AZURE_REDIRECT_URI: str = Field(default="http://localhost:8000/auth/azure/callback", alias="AZURE_REDIRECT_URI")
     AZURE_AUTHORITY: str = Field(default="https://login.microsoftonline.com", alias="AZURE_AUTHORITY")
-    AZURE_SCOPES: list[str] = ["openid"]
+    AZURE_SCOPES: list[str] = ["openid", "email", "profile"]
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="AZURE_", extra="ignore")
 
@@ -52,6 +61,7 @@ class Settings(BaseSettings):
     celery: CelerySettings = CelerySettings()
     file_storage: FileStorageSettings = FileStorageSettings()
     azure_sso: AzureSSOSettings = AzureSSOSettings()
+    google_sso: GoogleSSOSettings = GoogleSSOSettings()
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

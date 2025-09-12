@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form
 from starlette import status
 from starlette.responses import RedirectResponse
 
@@ -37,8 +37,19 @@ async def azure_login(auth_service: auth_service_deps):
 
 
 @router.post("/azure/callback", response_model=TokenSchema, status_code=status.HTTP_200_OK, description="Azure SSO callback")
-async def azure_callback(request: Request, auth_service: auth_service_deps):
-    form = await request.form()
-    user = await auth_service.handle_azure_callback(id_token=form.get("id_token"))
+async def azure_callback(auth_service: auth_service_deps, id_token: str = Form(...)):
+    user = await auth_service.handle_azure_callback(id_token=id_token)
+    tokens = auth_service.generate_tokens_for_user(user=user)
+    return tokens
+
+@router.get("/google/login", response_model=None, status_code=status.HTTP_200_OK, description="Google SSO login")
+async def google_login(auth_service: auth_service_deps):
+    url = await auth_service.get_google_login_url()
+    return RedirectResponse(url)
+
+
+@router.post("/google/callback", response_model=TokenSchema, status_code=status.HTTP_200_OK, description="Google SSO callback")
+async def google_callback(auth_service: auth_service_deps, id_token: str = Form(...)):
+    user = await auth_service.handle_google_callback(id_token=id_token)
     tokens = auth_service.generate_tokens_for_user(user=user)
     return tokens
