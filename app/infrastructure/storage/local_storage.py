@@ -4,6 +4,7 @@ from pathlib import Path
 
 from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.settings import FileStorageSettings
+from app.utils.exceptions import FileTooLargeError, FileExtensionNotAllowedError
 
 
 class LocalFileStorage(FileStorageInterface):
@@ -23,12 +24,12 @@ class LocalFileStorage(FileStorageInterface):
         """Validate file content and extension."""
         # Check file size
         if len(content) > self.max_file_size:
-            raise ValueError(f"File size exceeds maximum allowed size of {self.max_file_size} bytes")
+            raise FileTooLargeError(max_size=self.max_file_size)
         
         # Check file extension
         file_extension = Path(filename).suffix.lower()
         if file_extension not in self.allowed_extensions:
-            raise ValueError(f"File extension '{file_extension}' is not allowed. Allowed extensions: {self.allowed_extensions}")
+            raise FileExtensionNotAllowedError(extension=file_extension, allowed=self.allowed_extensions)
 
     def _generate_unique_filename(self, original_filename: str) -> str:
         """Generate a unique filename to avoid conflicts."""

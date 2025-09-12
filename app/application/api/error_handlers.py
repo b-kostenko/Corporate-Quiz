@@ -20,3 +20,9 @@ def handle_unauthorized_action(_: Request, e: base_exc.UnauthorizedAction) -> JS
 
 def handle_permission_denied(_: Request, e: base_exc.PermissionDenied) -> JSONResponse:
     return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_403_FORBIDDEN)
+
+def add_exception_handlers(_: Request, e: base_exc.FileTooLargeError):
+    return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+
+def file_extension_not_allowed_handler(_: Request, e: base_exc.FileExtensionNotAllowedError):
+    return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)

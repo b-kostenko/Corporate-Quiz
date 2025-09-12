@@ -43,3 +43,9 @@ class UserRepository(AbstractUserRepository):
     async def delete(self, user: User, session: AsyncSession) -> None:
         await session.delete(user)
         await session.commit()
+
+    @provide_async_session
+    async def update_password(self, user: User, new_password: str, session: AsyncSession) -> None:
+        user = await session.merge(user)
+        user.password = new_password
+        await session.commit()

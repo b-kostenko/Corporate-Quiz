@@ -10,7 +10,6 @@ class UserInputSchema(BaseModel):
     last_name: str | None = None
     email: EmailStr
     password: str
-    avatar_url: str | None = None
 
 
 class UserOutputSchema(BaseModel):
@@ -31,8 +30,6 @@ class UserUpdateSchema(BaseModel):
 
     first_name: str | None = None
     last_name: str | None = None
-    password: str | None = None
-    avatar_url: str | None = None
 
 
 class UserPasswordUpdateSchema(BaseModel):
@@ -63,4 +60,8 @@ class TokenType(str, Enum):
 class TokenSchema(BaseModel):
     token_type: str
     access_token: str
+    refresh_token: str
+
+
+class RefreshTokenRequestSchema(BaseModel):
     refresh_token: str

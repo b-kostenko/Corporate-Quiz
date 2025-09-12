@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy import String, Enum, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.infrastructure.postgres.models import User
+from app.infrastructure.postgres.models.user import User
 from app.infrastructure.postgres.models.base import BaseModelMixin
 from app.infrastructure.postgres.models.enums import CompanyStatus, CompanyMemberRole, InvitationStatus
 

@@ -4,6 +4,7 @@ from typing import List
 from pydantic import EmailStr
 
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema
+from app.infrastructure.postgres.models import User
 
 
 class AbstractUserService(ABC):
@@ -25,4 +26,8 @@ class AbstractUserService(ABC):
 
     @abstractmethod
     def delete(self, email: EmailStr) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_avatar(self, user_avatar: str, user: User):
         raise NotImplementedError

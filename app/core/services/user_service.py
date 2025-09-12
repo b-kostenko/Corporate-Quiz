@@ -40,3 +40,11 @@ class UserService(AbstractUserService):
 
     async def delete(self, user: User) -> None:
         await self.user_repository.delete(user=user)
+
+    async def update_avatar(self, user_avatar: str, user: User) -> UserOutputSchema:
+        response = await self.user_repository.get(email=user.email)
+        if not response:
+            raise ObjectNotFound(model_name="User", id_=user.email)
+
+        response = await self.user_repository.update(user=user, updates={"avatar_url": user_avatar})
+        return UserOutputSchema.model_validate(response)

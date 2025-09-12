@@ -58,7 +58,7 @@ async def get_my_invitations(
     invitations = await company_service.get_invitations_for_user(user=user)
     return invitations
 
-@router.get("/company-invitations", response_model=list[CompanyInvitationOutputSchema], status_code=status.HTTP_200_OK)
+@router.get("/{company_id}/company-invitations", response_model=list[CompanyInvitationOutputSchema], status_code=status.HTTP_200_OK)
 async def get_company_invitations(
         company_id: UUID,
         company_service: company_service_deps,

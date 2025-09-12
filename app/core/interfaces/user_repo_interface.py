@@ -28,3 +28,7 @@ class AbstractUserRepository(ABC):
     @abstractmethod
     async def delete(self, user: User) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def update_password(self, user: User, new_password: str) -> None:
+        raise NotImplementedError

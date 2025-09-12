@@ -4,7 +4,7 @@ from app.core.repositories.user_repository import AbstractUserRepository
 from app.core.schemas.user_schemas import TokenSchema, TokenType
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.jwt import create_token, decode_token, verify_token
-from app.infrastructure.security.password import verify_password
+from app.infrastructure.security.password import verify_password, hash_password
 from app.settings import settings
 from app.utils.exceptions import InvalidCredentials, ObjectNotFound
 
@@ -66,3 +66,14 @@ class AuthService:
         return TokenSchema(
             access_token=new_access_token, refresh_token=refresh_token, token_type=settings.token.TOKEN_TYPE
         )
+
+    async def change_password(self,email: EmailStr, old_password: str, new_password: str) -> None:
+        user = await self.user_repository.get(email)
+        if not user:
+            raise ObjectNotFound(model_name="User", id_=email)
+
+        if not verify_password(plain_password=old_password, hashed_password=user.password):
+            raise InvalidCredentials("Invalid credentials provided")
+
+        hashed_new_password = hash_password(new_password)
+        await self.user_repository.update_password(user=user, new_password=hashed_new_password)
