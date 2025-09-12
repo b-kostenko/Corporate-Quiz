@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.core.interfaces.file_storage_interface import FileStorageInterface
 from app.settings import FileStorageSettings
-from app.utils.exceptions import FileTooLargeError, FileExtensionNotAllowedError
+from app.utils.exceptions import FileExtensionNotAllowedError, FileTooLargeError
 
 
 class LocalFileStorage(FileStorageInterface):

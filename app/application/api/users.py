@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile
 from pydantic import EmailStr
 from starlette import status
 
-from app.application.api.deps import current_user_deps, user_service_deps, file_storage_deps
+from app.application.api.deps import current_user_deps, file_storage_deps, user_service_deps
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema, UserUpdateSchema
 
 router = APIRouter(prefix="/users", tags=["Users"])
