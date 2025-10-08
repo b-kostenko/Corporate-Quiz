@@ -173,7 +173,7 @@ class QuizService:
         if not quiz:
             raise ObjectNotFound(model_name="Quiz", id_=quiz_id)
 
-        quiz_attempt_key = f"quiz_attempt:{user.id}:{company.id}:{quiz.id}"
+        quiz_attempt_key = f"{user.id}:{company.id}:{quiz.id}"
         attempt = await self.redis_repository.get(key=quiz_attempt_key)
         if not attempt:
             return []

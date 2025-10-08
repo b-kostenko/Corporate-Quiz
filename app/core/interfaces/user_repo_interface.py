@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Sequence
+from typing import Dict, Tuple
+from uuid import UUID
 
 from pydantic import EmailStr
 
@@ -16,9 +17,11 @@ class AbstractUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all(
-        self,
-    ) -> Sequence[User]:
+    async def get_by_id(self, user_id: UUID) -> User | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_all(self, limit: int, offset: int) -> Tuple[list[User], int]:
         raise NotImplementedError
 
     @abstractmethod

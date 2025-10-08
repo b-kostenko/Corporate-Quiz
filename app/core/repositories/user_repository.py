@@ -1,7 +1,8 @@
-from typing import Dict, Sequence
+from typing import Dict, Tuple
+from uuid import UUID
 
 from pydantic import EmailStr
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.user_repo_interface import AbstractUserRepository
@@ -24,10 +25,22 @@ class UserRepository(AbstractUserRepository):
         return result.scalar_one_or_none()
 
     @provide_async_session
-    async def get_all(self, session: AsyncSession) -> Sequence[User]:
-        query = select(User)
+    async def get_by_id(self, user_id: UUID, session: AsyncSession) -> User | None:
+        query = select(User).where(User.id == user_id)
         result = await session.execute(query)
-        return result.scalars().all()
+        return result.scalar_one_or_none()
+
+    @provide_async_session
+    async def get_all(self, limit: int, offset: int, session: AsyncSession) -> Tuple[list[User], int]:
+        count_query = select(func.count(User.id))
+        total_result = await session.execute(count_query)
+        total = total_result.scalar()
+
+        query = select(User).order_by(User.created_at.desc()).limit(limit).offset(offset)
+        result = await session.execute(query)
+        users = result.scalars().all()
+        return list(users), total
+
 
     @provide_async_session
     async def update(self, user: User, updates: Dict, session: AsyncSession) -> User:

@@ -1,9 +1,10 @@
-from typing import List
+from uuid import UUID
 
 from pydantic import EmailStr
 
 from app.core.interfaces.user_serv_interface import AbstractUserService
 from app.core.repositories.user_repository import AbstractUserRepository
+from app.core.schemas import PaginatedResponse, PaginationMeta
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.password import hash_password
@@ -30,9 +31,21 @@ class UserService(AbstractUserService):
             raise ObjectNotFound(model_name="User", id_=email)
         return UserOutputSchema.model_validate(response)
 
-    async def get_all(self) -> List[UserOutputSchema]:
-        users = await self.user_repository.get_all()
-        return [UserOutputSchema.model_validate(user) for user in users]
+    async def get_by_id(self, uuid: UUID) -> UserOutputSchema | None:
+        response = await self.user_repository.get_by_id(user_id=uuid)
+        if not response:
+            raise ObjectNotFound(model_name="User", id_=uuid)
+        return UserOutputSchema.model_validate(response)
+
+    async def get_all(self, limit: int, offset: int) -> PaginatedResponse[UserOutputSchema]:
+        users, total  = await self.user_repository.get_all(limit=limit, offset=offset)
+
+        user_schemas = [UserOutputSchema.model_validate(user) for user in users]
+        meta = PaginationMeta(
+            total=total, limit=limit, offset=offset, has_next=offset + limit < total, has_previous=offset > 0
+        )
+
+        return PaginatedResponse[UserOutputSchema](items=user_schemas, meta=meta)
 
     async def update(self, user: User, user_input: UserInputSchema) -> UserOutputSchema:
         response = await self.user_repository.update(user=user, updates=user_input.model_dump())

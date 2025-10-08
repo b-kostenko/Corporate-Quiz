@@ -17,7 +17,7 @@ class AbstractUserService(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_all(self) -> List[UserOutputSchema]:
+    def get_all(self, limit: int, offset: int) -> List[UserOutputSchema]:
         raise NotImplementedError
 
     @abstractmethod

@@ -1,18 +1,23 @@
-from typing import List
+from uuid import UUID
 
-from fastapi import APIRouter, UploadFile
-from pydantic import EmailStr
+from fastapi import APIRouter, Query, UploadFile
 from starlette import status
 
 from app.application.api.deps import current_user_deps, file_storage_deps, user_service_deps
+from app.core.schemas import PaginatedResponse
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema, UserUpdateSchema
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("/", response_model=List[UserOutputSchema], status_code=status.HTTP_200_OK)
-async def get_users(user_service: user_service_deps, _: current_user_deps):
-    users = await user_service.get_all()
+@router.get("/", response_model=PaginatedResponse[UserOutputSchema], status_code=status.HTTP_200_OK)
+async def get_users(
+        limit: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
+        offset: int = Query(default=0, ge=0, description="Number of items to skip"),
+        user_service: user_service_deps = None,
+        _: current_user_deps = None,
+):
+    users = await user_service.get_all(limit=limit, offset=offset)
     return users
 
 
@@ -22,9 +27,9 @@ async def read_users_me(user_service: user_service_deps, current_user: current_u
 
 
 
-@router.get("/{email}", response_model=UserOutputSchema, status_code=status.HTTP_200_OK)
-async def get_user_by_email(email: EmailStr, user_service: user_service_deps):
-    user = await user_service.get(email=email)
+@router.get("/{uuid}", response_model=UserOutputSchema, status_code=status.HTTP_200_OK)
+async def get_user_by_uuid(uuid: UUID, user_service: user_service_deps):
+    user = await user_service.get_by_id(uuid=uuid)
     return user
 
 
