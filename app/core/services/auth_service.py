@@ -3,8 +3,9 @@ import secrets
 from pydantic import EmailStr
 
 from app.core.repositories.user_repository import AbstractUserRepository
-from app.core.schemas.auth_schemas import AzureAuthorizationResponse, GoogleAuthorizationResponse
+from app.core.schemas.auth_schemas import AzureAuthorizationResponse, GoogleAuthorizationResponse, SSOTokensResponse
 from app.core.schemas.user_schemas import TokenSchema, TokenType, UserInputSchema
+from app.core.services.base_http_service import BaseHTTPClient
 from app.core.services.notification_service import AsyncEmailSender
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.jwt import create_token, decode_token, verify_token
@@ -15,9 +16,10 @@ from app.utils.exceptions import InvalidCredentials, ObjectNotFound
 
 
 class AuthService:
-    def __init__(self, user_repository: AbstractUserRepository, email_sender: AsyncEmailSender):
+    def __init__(self, user_repository: AbstractUserRepository, email_sender: AsyncEmailSender, http_client: BaseHTTPClient):
         self.user_repository: AbstractUserRepository = user_repository
         self.email_sender: AsyncEmailSender = email_sender
+        self.http_client = http_client
 
     async def get_current_user(self, token: str) -> User:
         verify = verify_token(token=token, token_type=TokenType.ACCESS)
@@ -141,9 +143,26 @@ class AuthService:
 
         return response.generate_url()
 
-    async def handle_azure_callback(self, id_token: str) -> User:
+    async def retrieve_azure_tokens(self, code: str) -> SSOTokensResponse:
+        data = {
+            "code": code,
+            "client_id": settings.azure_sso.AZURE_CLIENT_ID,
+            "client_secret": settings.azure_sso.AZURE_CLIENT_SECRET,
+            "redirect_uri": settings.azure_sso.AZURE_REDIRECT_URI,
+            "scope": "openid profile email offline_access",
+            "grant_type": "authorization_code",
+        }
+        tokens = await self.http_client.post(
+            endpoint=settings.azure_sso.AZURE_TOKEN_URL,
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        return SSOTokensResponse.model_validate(tokens)
+
+    async def handle_azure_callback(self, code: str) -> User:
+        tokens = await self.retrieve_azure_tokens(code=code)
         token_payload = decode_token(
-            token=id_token,
+            token=tokens.id_token,
             key=settings.token.SECRET_KEY,
             algorithms=None,
             options={"verify_signature": False}
@@ -179,9 +198,22 @@ class AuthService:
         )
         return response.generate_url()
 
-    async def handle_google_callback(self, id_token: str) -> User:
+    async def retrieve_google_tokens(self, code: str) -> SSOTokensResponse:
+        data = {
+            "code": code,
+            "client_id": settings.google_sso.GOOGLE_CLIENT_ID,
+            "client_secret": settings.google_sso.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.google_sso.GOOGLE_REDIRECT_URI,
+            "scope": " ".join(settings.google_sso.GOOGLE_SCOPES),
+            "grant_type": "authorization_code",
+        }
+        tokens = await self.http_client.post(endpoint=settings.google_sso.GOOGLE_TOKEN_URL, data=data)
+        return SSOTokensResponse.model_validate(tokens)
+
+    async def handle_google_callback(self, code: str) -> User:
+        tokens = await self.retrieve_google_tokens(code=code)
         token_payload = decode_token(
-            token=id_token,
+            token=tokens.id_token,
             key=settings.token.SECRET_KEY,
             algorithms=None,
             options={"verify_signature": False}

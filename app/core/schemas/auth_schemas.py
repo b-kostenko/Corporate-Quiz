@@ -8,9 +8,9 @@ class AzureAuthorizationResponse(BaseModel):
     """Azure OAuth2 URL parameters."""
     authorization_endpoint: str
     client_id: str
-    response_type: str = "id_token"
+    response_type: str = "code"
     redirect_uri: str
-    response_mode: str = "form_post"
+    response_mode: str = "query"
     scope: str
     nonce: str
     state: str
@@ -39,14 +39,21 @@ class AzureAuthorizationResponse(BaseModel):
         return secrets.token_urlsafe(16)
 
 
+class SSOTokensResponse(BaseModel):
+    """SSO tokens response schema."""
+    access_token: str
+    expires_in: int
+    id_token: str
+    scope: str
+    token_type: str
 
 class GoogleAuthorizationResponse(BaseModel):
     """Google OAuth2/OIDC URL parameters."""
     authorization_endpoint: str
     client_id: str
-    response_type: str = "id_token"
+    response_type: str = "code"
     redirect_uri: str
-    response_mode: str = "form_post"
+    response_mode: str = "query"
     scope: str
     state: str
     nonce: str

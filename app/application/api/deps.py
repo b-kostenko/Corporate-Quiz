@@ -9,6 +9,7 @@ from app.core.repositories.quiz_repository import QuizRepository
 from app.core.repositories.redis_repository import AsyncRedisRepository
 from app.core.repositories.user_repository import UserRepository
 from app.core.services.auth_service import AuthService
+from app.core.services.base_http_service import BaseHTTPClient
 from app.core.services.company_service import CompanyService
 from app.core.services.notification_service import AsyncEmailSender
 from app.core.services.quiz_service import QuizService
@@ -37,14 +38,18 @@ def get_user_repository() -> UserRepository:
 def get_user_service(user_repository: UserRepository = Depends(get_user_repository)) -> UserService:
     return UserService(user_repository=user_repository)
 
+def get_http_client() -> BaseHTTPClient:
+    return BaseHTTPClient()
 
 def get_auth_service(
         user_repository: UserRepository = Depends(get_user_repository),
-        email_sender: AsyncEmailSender = Depends(get_email_sender)
+        email_sender: AsyncEmailSender = Depends(get_email_sender),
+        http_client: BaseHTTPClient = Depends(get_http_client)
 ) -> AuthService:
     return AuthService(
         user_repository=user_repository,
-        email_sender=email_sender
+        email_sender=email_sender,
+        http_client=http_client
     )
 
 

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Form
+from urllib.parse import urlencode
+
+from fastapi import APIRouter
 from pydantic import EmailStr
 from starlette import status
 from starlette.responses import RedirectResponse
@@ -11,6 +13,7 @@ from app.core.schemas.user_schemas import (
     UserLoginSchema,
     UserPasswordUpdateSchema,
 )
+from app.settings import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -41,26 +44,29 @@ async def confirm_reset_password(payload: ResetPasswordSchema, token: str, uid: 
     await auth_service.confirm_reset_password(token=token, uid=uid, new_password=payload.new_password)
 
 
-@router.get("/azure/login", response_model=None, status_code=status.HTTP_200_OK, description="Azure SSO login")
+@router.get("/azure/login", status_code=status.HTTP_302_FOUND, description="Azure SSO login")
 async def azure_login(auth_service: auth_service_deps):
     url = await auth_service.get_azure_login_url()
-    return RedirectResponse(url)
+    return RedirectResponse(url, status_code=status.HTTP_302_FOUND)
 
 
-@router.post("/azure/callback", response_model=TokenSchema, status_code=status.HTTP_200_OK, description="Azure SSO callback")
-async def azure_callback(auth_service: auth_service_deps, id_token: str = Form(...)):
-    user = await auth_service.handle_azure_callback(id_token=id_token)
+@router.get("/azure/callback", status_code=status.HTTP_302_FOUND, description="Azure SSO callback")
+async def azure_callback(code: str, auth_service: auth_service_deps):
+    user = await auth_service.handle_azure_callback(code=code)
     tokens = auth_service.generate_tokens_for_user(user=user)
-    return tokens
+    redirect_url = f"{settings.FRONTEND_URL}/auth/callback?{urlencode(tokens.model_dump())}"
+    return RedirectResponse(redirect_url, status_code=status.HTTP_302_FOUND)
 
-@router.get("/google/login", response_model=None, status_code=status.HTTP_200_OK, description="Google SSO login")
+
+@router.get("/google/login", status_code=status.HTTP_302_FOUND, description="Google SSO login")
 async def google_login(auth_service: auth_service_deps):
     url = await auth_service.get_google_login_url()
-    return RedirectResponse(url)
+    return RedirectResponse(url, status_code=status.HTTP_302_FOUND)
 
 
-@router.post("/google/callback", response_model=TokenSchema, status_code=status.HTTP_200_OK, description="Google SSO callback")
-async def google_callback(auth_service: auth_service_deps, id_token: str = Form(...)):
-    user = await auth_service.handle_google_callback(id_token=id_token)
+@router.get("/google/callback", status_code=status.HTTP_302_FOUND, description="Google SSO callback")
+async def google_callback(code: str, auth_service: auth_service_deps):
+    user = await auth_service.handle_google_callback(code=code)
     tokens = auth_service.generate_tokens_for_user(user=user)
-    return tokens
+    redirect_url = f"{settings.FRONTEND_URL}/auth/callback?{urlencode(tokens.model_dump())}"
+    return RedirectResponse(redirect_url, status_code=status.HTTP_302_FOUND)

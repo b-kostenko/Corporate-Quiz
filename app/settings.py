@@ -19,6 +19,7 @@ class GoogleSSOSettings(BaseSettings):
     GOOGLE_REDIRECT_URI: str = Field(default="http://localhost:8000/auth/google/callback", alias="GOOGLE_REDIRECT_URI")
     GOOGLE_AUTHORITY: str = Field(default="https://accounts.google.com", alias="GOOGLE_AUTHORITY")
     GOOGLE_SCOPES: list[str] = ["openid", "email", "profile"]
+    GOOGLE_TOKEN_URL: str = Field(default="https://oauth2.googleapis.com/token", alias="GOOGLE_TOKEN_URL")
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="GOOGLE_", extra="ignore")
 
@@ -31,6 +32,10 @@ class AzureSSOSettings(BaseSettings):
     AZURE_SCOPES: list[str] = ["openid", "email", "profile"]
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="AZURE_", extra="ignore")
+
+    @property
+    def AZURE_TOKEN_URL(self) -> str:
+        return f"{self.AZURE_AUTHORITY}/{self.AZURE_TENANT_ID}/oauth2/v2.0/token"
 
 
 class TokenSettings(BaseSettings):
@@ -75,6 +80,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     BASE_URL: str = Field(default="http://localhost:8000", alias="BASE_URL")
+    FRONTEND_URL: str = Field(default="http://localhost:5173", alias="FRONTEND_URL")
     DATABASE_URL: str
     TEMPLATES_DIR: Path = Path("app/templates")
 
