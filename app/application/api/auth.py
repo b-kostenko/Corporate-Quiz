@@ -54,7 +54,7 @@ async def azure_login(auth_service: auth_service_deps):
 async def azure_callback(code: str, auth_service: auth_service_deps):
     user = await auth_service.handle_azure_callback(code=code)
     tokens = auth_service.generate_tokens_for_user(user=user)
-    redirect_url = f"{settings.FRONTEND_URL}/auth/callback?{urlencode(tokens.model_dump())}"
+    redirect_url = f"{settings.FRONTEND_URL}/login/success?{urlencode(tokens.model_dump())}"
     return RedirectResponse(redirect_url, status_code=status.HTTP_302_FOUND)
 
 
@@ -68,5 +68,5 @@ async def google_login(auth_service: auth_service_deps):
 async def google_callback(code: str, auth_service: auth_service_deps):
     user = await auth_service.handle_google_callback(code=code)
     tokens = auth_service.generate_tokens_for_user(user=user)
-    redirect_url = f"{settings.FRONTEND_URL}/auth/callback?{urlencode(tokens.model_dump())}"
+    redirect_url = f"{settings.FRONTEND_URL}/login/success?{urlencode(tokens.model_dump())}"
     return RedirectResponse(redirect_url, status_code=status.HTTP_302_FOUND)

@@ -100,7 +100,7 @@ class AuthService:
             token_type=TokenType.RESET_PASSWORD,
             expire_minutes=settings.token.RESET_PASSWORD_TOKEN_EXPIRE_MINUTES,
         )
-        reset_link = f"{settings.BASE_URL}/confirm-reset-password?uid={uid}&token={token}"
+        reset_link = f"{settings.FRONTEND_URL}/confirm-reset-password?uid={uid}&token={token}"
 
         payload = {
             "user_name": user.first_name,
