@@ -105,7 +105,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def remove_user_from_company(self, company: Company, user_id: UUID, user: User) -> None:
+    async def remove_user_from_company(self, company: Company, user_id: UUID) -> None:
         """Remove a user from a company."""
         raise NotImplementedError
 

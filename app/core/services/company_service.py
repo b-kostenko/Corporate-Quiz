@@ -214,7 +214,8 @@ class CompanyService:
         if not user_is_company_member:
             raise ObjectNotFound(model_name="Company Member", id_=user.id)
 
-        await self.company_repository.remove_user_from_company(company=company, user_id=user.id, user=user)
+        await self.company_repository.remove_user_from_company(company=company, user_id=user.id)
+        await self.company_repository.remove_user_invitations(company=company, user_id=user.id)
 
     async def get_company_members(self, company_id: UUID) -> CompanyMemberOutputSchema:
         """Get paginated list of all companies."""
@@ -247,7 +248,7 @@ class CompanyService:
         if not user_is_company_member:
             raise ObjectNotFound(model_name="Company Member", id_=user_id)
 
-        await self.company_repository.remove_user_from_company(company=company, user_id=user_id, user=user)
+        await self.company_repository.remove_user_from_company(company=company, user_id=user_id)
         await self.company_repository.remove_user_invitations(company=company, user_id=user_id)
 
     async def change_member_role(

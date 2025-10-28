@@ -214,7 +214,7 @@ class CompanyRepository(AbstractCompanyRepository):
 
     @provide_async_session
     async def remove_user_from_company(
-        self, company: Company, user_id: UUID, user: User, session: AsyncSession
+        self, company: Company, user_id: UUID, session: AsyncSession
     ) -> None:
         query = select(CompanyMember).where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
         result = await session.execute(query)
