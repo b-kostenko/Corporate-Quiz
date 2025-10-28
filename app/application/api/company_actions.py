@@ -18,6 +18,9 @@ async def invite_user_to_company(
 ):
     """Invite a user to a company."""
     invite_user = await user_service.get(email=payload.invite_user_email)
+    await company_service.check_if_user_is_invited(
+        company_id=payload.company_id, invite_user=invite_user
+    )
     invite = await company_service.invite_user_to_company(
         company_id=payload.company_id, invite_user=invite_user, user=user
     )

@@ -37,15 +37,27 @@ async def get_all_companies(
     return companies
 
 
-@router.get("/", response_model=PaginatedResponse[CompanyOutputSchema], status_code=status.HTTP_200_OK)
-async def get_my_companies(
+@router.get("/owned", response_model=PaginatedResponse[CompanyOutputSchema], status_code=status.HTTP_200_OK)
+async def get_my_owned_companies(
     limit: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
     offset: int = Query(default=0, ge=0, description="Number of items to skip"),
     user: current_user_deps = None,
     company_service: company_service_deps = None,
 ) -> PaginatedResponse[CompanyOutputSchema]:
-    """Get paginated companies for the current user."""
+    """Get paginated companies owned by the current user (where user is owner/admin)."""
     companies = await company_service.get_companies_for_owner_paginated(user=user, limit=limit, offset=offset)
+    return companies
+
+
+@router.get("/joined", response_model=PaginatedResponse[CompanyOutputSchema], status_code=status.HTTP_200_OK)
+async def get_my_joined_companies(
+    limit: int = Query(default=10, ge=1, le=100, description="Number of items per page"),
+    offset: int = Query(default=0, ge=0, description="Number of items to skip"),
+    user: current_user_deps = None,
+    company_service: company_service_deps = None,
+) -> PaginatedResponse[CompanyOutputSchema]:
+    """Get paginated companies where the current user is a member (not owner)."""
+    companies = await company_service.get_companies_for_member_paginated(user=user, limit=limit, offset=offset)
     return companies
 
 

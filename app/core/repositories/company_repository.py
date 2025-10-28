@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, CompanyStatus
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -76,14 +76,14 @@ class CompanyRepository(AbstractCompanyRepository):
         return list(companies), total
 
     @provide_async_session
-    async def delete(self, company_id: int, owner_id: UUID, session: AsyncSession) -> bool:
-        company = await self.get(company_id=company_id, owner_id=owner_id)
-        if not company:
-            return False
-
+    async def delete(self, company: Company, owner_id: UUID, session: AsyncSession) -> bool:
         await session.delete(company)
         await session.commit()
         return True
+
+    @provide_async_session
+    async def delete_company_invitation(self, ):
+        pass
 
     @provide_async_session
     async def get_all_companies_paginated(
@@ -96,7 +96,7 @@ class CompanyRepository(AbstractCompanyRepository):
         total = total_result.scalar()
 
         # Get paginated results
-        query = select(Company).order_by(Company.created_at.desc()).limit(limit).offset(offset)
+        query = select(Company).where(Company.company_status == CompanyStatus.VISIBLE).order_by(Company.created_at.desc()).limit(limit).offset(offset)
         result = await session.execute(query)
         companies = result.scalars().all()
 
@@ -238,3 +238,57 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.commit()
         await session.refresh(company_member)
         return user, company_member
+
+    @provide_async_session
+    async def remove_user_invitations(self, company: Company, user_id: UUID, session: AsyncSession) -> None:
+        query = select(CompanyInvitation).where(
+            CompanyInvitation.company_id == company.id,
+            CompanyInvitation.invited_user_id == user_id
+        )
+        result = await session.execute(query)
+        invitations = result.scalars().all()
+
+        for invitation in invitations:
+            await session.delete(invitation)
+
+        await session.commit()
+
+    @provide_async_session
+    async def get_companies_for_member(self, user_id: UUID, session: AsyncSession) -> Sequence[Company]:
+        """Get companies where user is a member (not owner)."""
+        query = (
+            select(Company)
+            .join(CompanyMember, CompanyMember.company_id == Company.id)
+            .where(CompanyMember.user_id == user_id, Company.owner_id != user_id)
+            .order_by(Company.created_at.desc())
+        )
+        result = await session.execute(query)
+        return result.scalars().all()
+
+    @provide_async_session
+    async def get_companies_for_member_paginated(
+        self, user_id: UUID, limit: int, offset: int, session: AsyncSession
+    ) -> Tuple[list[Company], int]:
+        """Get paginated companies where user is a member (not owner) with total count."""
+        # Get total count
+        count_query = (
+            select(func.count(Company.id))
+            .join(CompanyMember, CompanyMember.company_id == Company.id)
+            .where(CompanyMember.user_id == user_id, Company.owner_id != user_id)
+        )
+        total_result = await session.execute(count_query)
+        total = total_result.scalar()
+
+        # Get paginated results
+        query = (
+            select(Company)
+            .join(CompanyMember, CompanyMember.company_id == Company.id)
+            .where(CompanyMember.user_id == user_id, Company.owner_id != user_id)
+            .order_by(Company.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(query)
+        companies = result.scalars().all()
+
+        return list(companies), total

@@ -21,7 +21,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, company_id: UUID, owner_id: UUID) -> None:
+    async def delete(self, company: Company, owner_id: UUID) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -119,4 +119,21 @@ class AbstractCompanyRepository(ABC):
         self, company: Company, user_id: UUID, new_role: str
     ) -> tuple[User, CompanyMember] | None:
         """Change a member's role in a company."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def remove_user_invitations(self, company: Company, user_id: UUID) -> None:
+        """Remove all invitations for a user in a specific company."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_companies_for_member(self, user_id: UUID) -> list[Company]:
+        """Get companies where user is a member (not owner)."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_companies_for_member_paginated(
+        self, user_id: UUID, limit: int, offset: int
+    ) -> Tuple[list[Company], int]:
+        """Get paginated companies where user is a member (not owner) with total count."""
         raise NotImplementedError

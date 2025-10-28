@@ -76,15 +76,33 @@ class RedisSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="REDIS_", extra="ignore")
 
+
+class DatabaseSettings(BaseSettings):
+    POSTGRES_DRIVER: str = Field(default="postgresql+asyncpg", alias="POSTGRES_DRIVER")
+    POSTGRES_USER: str = Field(..., alias="POSTGRES_USER")
+    POSTGRES_PASSWORD: str = Field(..., alias="POSTGRES_PASSWORD")
+    POSTGRES_HOST: str = Field(..., alias="POSTGRES_HOST")
+    POSTGRES_PORT: int = Field(default=5432, alias="POSTGRES_PORT")
+    POSTGRES_DB: str = Field(..., alias="POSTGRES_DB")
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return (
+            f"{self.POSTGRES_DRIVER}://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+
 class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     BASE_URL: str = Field(default="http://localhost:8000", alias="BASE_URL")
     FRONTEND_URL: str = Field(default="http://localhost:5173", alias="FRONTEND_URL")
-    DATABASE_URL: str
     TEMPLATES_DIR: Path = Path("app/templates")
 
-
+    database: DatabaseSettings = DatabaseSettings()
     token: TokenSettings = TokenSettings()
     celery: CelerySettings = CelerySettings()
     file_storage: FileStorageSettings = FileStorageSettings()

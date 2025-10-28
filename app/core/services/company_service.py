@@ -41,9 +41,11 @@ class CompanyService:
         return CompanyOutputSchema.model_validate(response)
 
     async def delete(self, company_id: UUID, user: User) -> None:
-        result = await self.company_repository.delete(company_id=company_id, owner_id=user.id)
-        if not result:
+        company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
+        if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
+
+        await self.company_repository.delete(company=company, owner_id=user.id)
 
     async def get(self, company_id: UUID) -> CompanyOutputSchema | None:
         response = await self.company_repository.get(company_id=company_id, owner_id=None)
@@ -104,6 +106,20 @@ class CompanyService:
 
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
 
+    async def check_if_user_is_invited(self, company_id: UUID, invite_user: User) -> None:
+        company = await self.company_repository.get(company_id=company_id, owner_id=None)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=company_id)
+
+        pending_invite_exists = await self.company_repository.check_if_invite_exists(
+            company=company, invite_user=invite_user, status=InvitationStatus.PENDING
+        )
+        accepted_invite_exists = await self.company_repository.check_if_invite_exists(
+            company=company, invite_user=invite_user, status=InvitationStatus.ACCEPTED
+        )
+        if pending_invite_exists or accepted_invite_exists:
+            raise ObjectAlreadyExists(message="User is already invited or a member of the company.")
+
     async def invite_user_to_company(self, company_id: UUID, invite_user: User, user: User) -> CompanyInvitation:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
@@ -122,12 +138,13 @@ class CompanyService:
 
     async def accept_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
-        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=user.id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
 
-        if not invitation:
-            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
 
         if invitation.status != InvitationStatus.PENDING:
             raise ObjectAlreadyExists(message="Invitation has already been responded to.")
@@ -156,7 +173,7 @@ class CompanyService:
         if not invitation:
             raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
 
-        if invitation.invited_by_id != user.id:
+        if invitation.invited_user_id != user.id:
             raise UnauthorizedAction(message="You are not authorized to decline this invitation.")
 
         await self.company_repository.cancel_company_invitation(invitation=invitation)
@@ -231,6 +248,7 @@ class CompanyService:
             raise ObjectNotFound(model_name="Company Member", id_=user_id)
 
         await self.company_repository.remove_user_from_company(company=company, user_id=user_id, user=user)
+        await self.company_repository.remove_user_invitations(company=company, user_id=user_id)
 
     async def change_member_role(
         self, company_id: UUID, user_id: UUID, new_role: CompanyMemberRole, user: User
@@ -269,3 +287,26 @@ class CompanyService:
         ]
 
         return users_schemas
+
+    async def get_companies_for_member(self, user: User) -> list[CompanyOutputSchema]:
+        """Get companies where user is a member (not owner)."""
+        companies = await self.company_repository.get_companies_for_member(user_id=user.id)
+        return [CompanyOutputSchema.model_validate(company) for company in companies]
+
+    async def get_companies_for_member_paginated(
+        self, user: User, limit: int, offset: int
+    ) -> PaginatedResponse[CompanyOutputSchema]:
+        """Get paginated companies where user is a member (not owner)."""
+        companies, total = await self.company_repository.get_companies_for_member_paginated(
+            user_id=user.id, limit=limit, offset=offset
+        )
+
+        # Convert to output schemas
+        company_schemas = [CompanyOutputSchema.model_validate(company) for company in companies]
+
+        # Create pagination metadata
+        meta = PaginationMeta(
+            total=total, limit=limit, offset=offset, has_next=offset + limit < total, has_previous=offset > 0
+        )
+
+        return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)

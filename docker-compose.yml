@@ -21,7 +21,7 @@ services:
       start_period: 40s
 
   postgres:
-    image: postgres:latest
+    image: postgres:14
     container_name: postgres
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
@@ -37,6 +37,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
   redis:
     image: redis:latest
     container_name: redis
@@ -51,3 +65,5 @@ services:
 volumes:
     postgres_data:
         name: postgres_data
+    pgadmin_data:
+        name: pgadmin_data
