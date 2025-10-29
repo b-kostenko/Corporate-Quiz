@@ -94,4 +94,5 @@ class CompanyMemberUserSchema(BaseModel):
 class CompanyMemberOutputSchema(CompanyOutputSchema):
     """Schema for company member output data."""
 
-    users: list[CompanyMemberUserSchema]
+    owner: CompanyMemberUserSchema | None = None
+    members: list[CompanyMemberUserSchema] = []

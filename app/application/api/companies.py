@@ -61,11 +61,11 @@ async def get_my_joined_companies(
     return companies
 
 
-@router.get("/{company_id}", response_model=CompanyOutputSchema, status_code=status.HTTP_200_OK)
-async def get_company(company_id: UUID, company_service: company_service_deps) -> CompanyOutputSchema:
+@router.get("/{company_id}", response_model=CompanyMemberOutputSchema, status_code=status.HTTP_200_OK)
+async def get_company(company_id: UUID, company_service: company_service_deps) -> CompanyMemberOutputSchema:
     """Get a company by its ID."""
-    company = await company_service.get(company_id=company_id)
-    return company
+    members = await company_service.get_company_members(company_id=company_id)
+    return members
 
 
 @router.put("/{company_id}", response_model=CompanyOutputSchema, status_code=status.HTTP_200_OK)
@@ -105,15 +105,6 @@ async def change_company_logo(
     company_logo = await file_storage.save_file(content=content, filename=logo_file.filename)
     company = await company_service.upload_logo(company_id=company_id, user=user, company_logo=company_logo)
     return company
-
-
-@router.get("/{company_id}/members", response_model=CompanyMemberOutputSchema, status_code=status.HTTP_200_OK)
-async def get_company_members(
-    company_id: UUID, _: current_user_deps = None, company_service: company_service_deps = None
-) -> CompanyMemberOutputSchema:
-    """Get paginated list of company members for the current user."""
-    members = await company_service.get_company_members(company_id=company_id)
-    return members
 
 
 @router.delete("/{company_id}/members/{user_id}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)

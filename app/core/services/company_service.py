@@ -218,22 +218,27 @@ class CompanyService:
         await self.company_repository.remove_user_invitations(company=company, user_id=user.id)
 
     async def get_company_members(self, company_id: UUID) -> CompanyMemberOutputSchema:
-        """Get paginated list of all companies."""
+        """Get company with separated owner and members."""
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
-            raise ObjectNotFound(model_name="Company Invitation", id_=company_id)
+            raise ObjectNotFound(model_name="Company", id_=company_id)
 
         # Get members with their roles
         members = await self.company_repository.get_company_members(company=company)
 
-        # Create user schemas with roles
-        users_schemas = [
-            CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
-            for user, company_member in members
-        ]
+        # Separate owner and members
+        owner_schema = None
+        members_schemas = []
+        
+        for user, company_member in members:
+            user_schema = CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
+            if company_member.role == CompanyMemberRole.OWNER:
+                owner_schema = user_schema
+            else:  # ADMIN or MEMBER
+                members_schemas.append(user_schema)
 
         company_schema = CompanyMemberOutputSchema.model_validate(
-            {**CompanyOutputSchema.model_validate(company).model_dump(), "users": users_schemas}
+            {**CompanyOutputSchema.model_validate(company).model_dump(), "owner": owner_schema, "members": members_schemas}
         )
         return company_schema
 
