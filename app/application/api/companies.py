@@ -112,7 +112,7 @@ async def remove_company_member(
     company_id: UUID, user_id: UUID, company_service: company_service_deps, user: current_user_deps
 ) -> None:
     """Remove a member from a company."""
-    await company_service.remove_user_from_company(company_id=company_id, user_id=user_id)
+    await company_service.remove_user_from_company(company_id=company_id, user_id=user_id, user=user)
 
 
 @router.patch(

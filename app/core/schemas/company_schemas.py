@@ -2,6 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
+from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import CompanyMember, User
 from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus
 
@@ -57,9 +58,9 @@ class CompanyInvitationOutputSchema(BaseModel):
     """Schema for company invitation data."""
 
     id: UUID
-    company_id: UUID
-    invited_user_id: UUID
-    invited_by_id: UUID
+    company: CompanyOutputSchema
+    invited_user: UserOutputSchema
+    invited_by: UserOutputSchema
     status: InvitationStatus
 
     class Config:

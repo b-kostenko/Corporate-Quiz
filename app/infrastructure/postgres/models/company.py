@@ -25,6 +25,12 @@ class Company(BaseModelMixin):
     owner: Mapped[User] = relationship(User)
 
     quiz_attempts = relationship("UserQuizAttempt", back_populates="company")
+    members: Mapped[list["CompanyMember"]] = relationship(
+        "CompanyMember",
+        back_populates="company",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
 
     __table_args__ = (UniqueConstraint("owner_id", "company_email", name="uq_owner_email"),)
 
@@ -32,7 +38,8 @@ class Company(BaseModelMixin):
 class CompanyMember(BaseModelMixin):
     __tablename__ = "company_members"
 
-    company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"))
+    company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"))
+    company: Mapped[Company] = relationship("Company", back_populates="members")
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     role: Mapped[CompanyMemberRole] = mapped_column(
         Enum(CompanyMemberRole, native_enum=False), default=CompanyMemberRole.MEMBER, nullable=False
@@ -48,3 +55,7 @@ class CompanyInvitation(BaseModelMixin):
     status: Mapped[InvitationStatus] = mapped_column(
         Enum(InvitationStatus, native_enum=False), default=InvitationStatus.PENDING, nullable=False
     )
+    
+    company: Mapped["Company"] = relationship("Company", foreign_keys=[company_id])
+    invited_user: Mapped[User] = relationship("User", foreign_keys=[invited_user_id])
+    invited_by: Mapped[User] = relationship("User", foreign_keys=[invited_by_id])

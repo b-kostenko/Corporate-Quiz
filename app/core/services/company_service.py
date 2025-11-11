@@ -3,11 +3,13 @@ from uuid import UUID
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.core.schemas.company_schemas import (
     CompanyInputSchema,
+    CompanyInvitationOutputSchema,
     CompanyMemberOutputSchema,
     CompanyMemberUserSchema,
     CompanyOutputSchema,
 )
 from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMeta
+from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation
 from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
@@ -120,7 +122,7 @@ class CompanyService:
         if pending_invite_exists or accepted_invite_exists:
             raise ObjectAlreadyExists(message="User is already invited or a member of the company.")
 
-    async def invite_user_to_company(self, company_id: UUID, invite_user: User, user: User) -> CompanyInvitation:
+    async def invite_user_to_company(self, company_id: UUID, invite_user: User, user: User) -> CompanyInvitationOutputSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -134,7 +136,15 @@ class CompanyService:
         invited = await self.company_repository.invite_user_to_company(
             company=company, invite_user=invite_user, invited_by=user
         )
-        return invited
+        
+        # Return schema with nested objects
+        return CompanyInvitationOutputSchema(
+            id=invited.id,
+            company=CompanyOutputSchema.model_validate(company),
+            invited_user=UserOutputSchema.model_validate(invite_user),
+            invited_by=UserOutputSchema.model_validate(user),
+            status=invited.status
+        )
 
     async def accept_company_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
@@ -178,17 +188,43 @@ class CompanyService:
 
         await self.company_repository.cancel_company_invitation(invitation=invitation)
 
-    async def get_invitations_for_user(self, user: User) -> list[CompanyInvitation]:
+    async def get_invitations_for_user(self, user: User) -> list[CompanyInvitationOutputSchema]:
+        """Get all invitations for a user with nested objects."""
         invitations = await self.company_repository.get_invitations_for_user(user=user)
-        return invitations
+        
+        result = []
+        for invitation in invitations:
+            invitation_schema = CompanyInvitationOutputSchema(
+                id=invitation.id,
+                company=CompanyOutputSchema.model_validate(invitation.company),
+                invited_user=UserOutputSchema.model_validate(invitation.invited_user),
+                invited_by=UserOutputSchema.model_validate(invitation.invited_by),
+                status=invitation.status
+            )
+            result.append(invitation_schema)
+        
+        return result
 
-    async def get_invitations_for_company(self, company_id: UUID, user: User) -> list[CompanyInvitation]:
+    async def get_invitations_for_company(self, company_id: UUID, user: User) -> list[CompanyInvitationOutputSchema]:
+        """Get all invitations for a company with nested objects."""
         company = await self.company_repository.get(company_id=company_id, owner_id=user.id)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
         invitations = await self.company_repository.get_invitations_for_company(company=company)
-        return invitations
+        
+        result = []
+        for invitation in invitations:
+            invitation_schema = CompanyInvitationOutputSchema(
+                id=invitation.id,
+                company=CompanyOutputSchema.model_validate(invitation.company),
+                invited_user=UserOutputSchema.model_validate(invitation.invited_user),
+                invited_by=UserOutputSchema.model_validate(invitation.invited_by),
+                status=invitation.status
+            )
+            result.append(invitation_schema)
+        
+        return result
 
     async def request_membership_to_company(self, company_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)

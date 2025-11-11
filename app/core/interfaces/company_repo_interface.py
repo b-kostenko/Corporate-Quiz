@@ -95,13 +95,13 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_invitations_for_user(self, user: User) -> list[CompanyInvitation]:
-        """Get all invitations for a user."""
+    async def get_invitations_for_user(self, user: User) -> Sequence[CompanyInvitation]:
+        """Get all invitations for a user with loaded relationships."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_invitations_for_company(self, company: Company) -> list[CompanyInvitation]:
-        """Get all invitations for a specific company."""
+    async def get_invitations_for_company(self, company: Company) -> Sequence[CompanyInvitation]:
+        """Get all invitations for a specific company with loaded relationships."""
         raise NotImplementedError
 
     @abstractmethod

@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.infrastructure.postgres.models import Company, User
@@ -193,15 +194,37 @@ class CompanyRepository(AbstractCompanyRepository):
         await session.refresh(invitation)
 
     @provide_async_session
-    async def get_invitations_for_user(self, user: User, session: AsyncSession) -> Sequence[CompanyInvitation]:
-        query = select(CompanyInvitation).where(CompanyInvitation.invited_user_id == user.id)
-        result = await session.execute(query)
+    async def get_invitations_for_user(
+        self, user: User, session: AsyncSession
+    ) -> Sequence[CompanyInvitation]:
+        """Get all invitations for a user with loaded relationships."""
+        stmt = (
+            select(CompanyInvitation)
+            .where(CompanyInvitation.invited_user_id == user.id)
+            .options(
+                selectinload(CompanyInvitation.company),
+                selectinload(CompanyInvitation.invited_user),
+                selectinload(CompanyInvitation.invited_by)
+            )
+        )
+        result = await session.execute(stmt)
         return result.scalars().all()
 
     @provide_async_session
-    async def get_invitations_for_company(self, company: Company, session: AsyncSession) -> Sequence[CompanyInvitation]:
-        query = select(CompanyInvitation).where(CompanyInvitation.company_id == company.id)
-        result = await session.execute(query)
+    async def get_invitations_for_company(
+        self, company: Company, session: AsyncSession
+    ) -> Sequence[CompanyInvitation]:
+        """Get all invitations for a company with loaded relationships."""
+        stmt = (
+            select(CompanyInvitation)
+            .where(CompanyInvitation.company_id == company.id)
+            .options(
+                selectinload(CompanyInvitation.company),
+                selectinload(CompanyInvitation.invited_user),
+                selectinload(CompanyInvitation.invited_by)
+            )
+        )
+        result = await session.execute(stmt)
         return result.scalars().all()
 
     @provide_async_session
