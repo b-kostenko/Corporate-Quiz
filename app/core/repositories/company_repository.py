@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, CompanyStatus
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, CompanyStatus, InvitationType
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -33,9 +33,15 @@ class CompanyRepository(AbstractCompanyRepository):
         constraints = [Company.id == company_id]
         if owner_id:
             constraints.append(Company.owner_id == owner_id)
-        query = select(Company).where(*constraints)
-        company = await session.execute(query)
-        return company.scalar_one_or_none()
+
+        query = (
+            select(Company)
+            .options(selectinload(Company.members))
+            .where(*constraints)
+        )
+
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
 
     @provide_async_session
     async def update(self, company: Company, updates: dict, session: AsyncSession) -> Company:
@@ -83,10 +89,6 @@ class CompanyRepository(AbstractCompanyRepository):
         return True
 
     @provide_async_session
-    async def delete_company_invitation(self, ):
-        pass
-
-    @provide_async_session
     async def get_all_companies_paginated(
         self, limit: int, offset: int, session: AsyncSession
     ) -> Tuple[list[Company], int]:
@@ -105,9 +107,14 @@ class CompanyRepository(AbstractCompanyRepository):
 
     @provide_async_session
     async def invite_user_to_company(
-        self, company: Company, invite_user: User, invited_by: User, session: AsyncSession
+        self, company: Company, invite_user: User, invited_by: User, invitation_type: InvitationType, session: AsyncSession
     ) -> CompanyInvitation:
-        query = {"company_id": company.id, "invited_user_id": invite_user.id, "invited_by_id": invited_by.id}
+        query = {
+            "company_id": company.id,
+            "invited_user_id": invite_user.id,
+            "invited_by_id": invited_by.id,
+            "invitation_type": invitation_type
+        }
         invitation = CompanyInvitation(**query)
         session.add(invitation)
         await session.commit()
@@ -134,19 +141,6 @@ class CompanyRepository(AbstractCompanyRepository):
         result = await session.execute(query)
         return result.scalar_one_or_none()
 
-    @provide_async_session
-    async def accept_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
-        invitation = await session.merge(invitation)
-        invitation.status = InvitationStatus.ACCEPTED
-        await session.commit()
-        await session.refresh(invitation)
-
-    @provide_async_session
-    async def decline_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
-        invitation = await session.merge(invitation)
-        invitation.status = InvitationStatus.DECLINED
-        await session.commit()
-        await session.refresh(invitation)
 
     @provide_async_session
     async def add_user_to_company(
@@ -185,13 +179,6 @@ class CompanyRepository(AbstractCompanyRepository):
         query = select(CompanyMember).where(CompanyMember.company_id == company.id, CompanyMember.user_id == user_id)
         result = await session.execute(query)
         return result.scalars().first()
-
-    @provide_async_session
-    async def cancel_company_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
-        invitation = await session.merge(invitation)
-        invitation.status = InvitationStatus.CANCELED
-        await session.commit()
-        await session.refresh(invitation)
 
     @provide_async_session
     async def get_invitations_for_user(
@@ -315,3 +302,32 @@ class CompanyRepository(AbstractCompanyRepository):
         companies = result.scalars().all()
 
         return list(companies), total
+
+    @provide_async_session
+    async def cancel_invitation(self, invitation: CompanyInvitation, session: AsyncSession):
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.CANCELED
+        await session.commit()
+        await session.refresh(invitation)
+
+
+    @provide_async_session
+    async def accept_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.ACCEPTED
+        await session.commit()
+        await session.refresh(invitation)
+
+    @provide_async_session
+    async def reject_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.REJECTED
+        await session.commit()
+        await session.refresh(invitation)
+
+    @provide_async_session
+    async def decline_invitation(self, invitation: CompanyInvitation, session: AsyncSession) -> None:
+        invitation = await session.merge(invitation)
+        invitation.status = InvitationStatus.DECLINED
+        await session.commit()
+        await session.refresh(invitation)

@@ -24,7 +24,6 @@ class AnswerOutputSchema(BaseModel):
     id: UUID
     question_id: UUID
     answer_text: str
-    is_correct: bool
 
     class Config:
         from_attributes = True

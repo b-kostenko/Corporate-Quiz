@@ -11,9 +11,8 @@ from app.core.schemas.company_schemas import (
 from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMeta
 from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import Company, User
-from app.infrastructure.postgres.models.company import CompanyInvitation
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
-from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, UnauthorizedAction
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, InvitationType
+from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, UnauthorizedAction, PermissionDenied
 
 
 class CompanyService:
@@ -134,7 +133,7 @@ class CompanyService:
             raise ObjectAlreadyExists(message="User is already invited or a member of the company.")
 
         invited = await self.company_repository.invite_user_to_company(
-            company=company, invite_user=invite_user, invited_by=user
+            company=company, invite_user=invite_user, invited_by=user, invitation_type=InvitationType.COMPANY_INVITE
         )
         
         # Return schema with nested objects
@@ -143,50 +142,9 @@ class CompanyService:
             company=CompanyOutputSchema.model_validate(company),
             invited_user=UserOutputSchema.model_validate(invite_user),
             invited_by=UserOutputSchema.model_validate(user),
+            invitation_type=invited.invitation_type,
             status=invited.status
         )
-
-    async def accept_company_invitation(self, invitation_id: UUID, user: User) -> None:
-        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
-        if not invitation:
-            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
-
-        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
-        if not company:
-            raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
-
-
-        if invitation.status != InvitationStatus.PENDING:
-            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
-
-        await self.company_repository.accept_company_invitation(invitation=invitation)
-
-        await self.company_repository.add_user_to_company(
-            company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
-        )
-
-    async def decline_company_invitation(self, invitation_id: UUID, user: User) -> None:
-        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
-        if not invitation:
-            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
-
-        if invitation.status != InvitationStatus.PENDING:
-            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
-
-        if invitation.invited_by_id != user.id:
-            raise UnauthorizedAction(message="You are not authorized to decline this invitation.")
-
-        await self.company_repository.decline_company_invitation(invitation=invitation)
-
-    async def cancel_company_invitation(self, invitation_id: UUID, user: User) -> None:
-        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
-        if not invitation:
-            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
-
-        if invitation.invited_user_id != user.id:
-            raise UnauthorizedAction(message="You are not authorized to decline this invitation.")
-
-        await self.company_repository.cancel_company_invitation(invitation=invitation)
 
     async def get_invitations_for_user(self, user: User) -> list[CompanyInvitationOutputSchema]:
         """Get all invitations for a user with nested objects."""
@@ -199,6 +157,7 @@ class CompanyService:
                 company=CompanyOutputSchema.model_validate(invitation.company),
                 invited_user=UserOutputSchema.model_validate(invitation.invited_user),
                 invited_by=UserOutputSchema.model_validate(invitation.invited_by),
+                invitation_type=invitation.invitation_type,
                 status=invitation.status
             )
             result.append(invitation_schema)
@@ -220,13 +179,14 @@ class CompanyService:
                 company=CompanyOutputSchema.model_validate(invitation.company),
                 invited_user=UserOutputSchema.model_validate(invitation.invited_user),
                 invited_by=UserOutputSchema.model_validate(invitation.invited_by),
+                invitation_type=invitation.invitation_type,
                 status=invitation.status
             )
             result.append(invitation_schema)
         
         return result
 
-    async def request_membership_to_company(self, company_id: UUID, user: User) -> None:
+    async def request_membership_to_company(self, company_id: UUID, user: User) -> CompanyInvitationOutputSchema:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
@@ -237,7 +197,20 @@ class CompanyService:
         if invite_exists:
             raise ObjectAlreadyExists(message="You have already requested membership or are a member of the company.")
 
-        await self.company_repository.invite_user_to_company(company=company, invite_user=user, invited_by=user)
+        invitation = await self.company_repository.invite_user_to_company(
+            company=company,
+            invite_user=user,
+            invited_by=user,
+            invitation_type=InvitationType.USER_REQUEST
+        )
+        return CompanyInvitationOutputSchema(
+            id=invitation.id,
+            company=CompanyOutputSchema.model_validate(company),
+            invited_user=UserOutputSchema.model_validate(user),
+            invited_by=UserOutputSchema.model_validate(user),
+            invitation_type=invitation.invitation_type,
+            status=invitation.status
+        )
 
     async def leave_company(self, company_id: UUID, user: User) -> None:
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
@@ -352,3 +325,128 @@ class CompanyService:
         )
 
         return PaginatedResponse[CompanyOutputSchema](items=company_schemas, meta=meta)
+
+
+    async def accept_incoming_user_invitation(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if invitation.invitation_type == InvitationType.COMPANY_INVITE:
+            company_admins_ids = [
+                member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
+            ]
+            if user.id not in company_admins_ids:
+                raise PermissionDenied(message="Only company owners or admins can accept invitations.")
+
+            await self.company_repository.accept_invitation(invitation=invitation)
+
+            await self.company_repository.add_user_to_company(
+                company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
+            )
+
+    async def reject_incoming_user_invitation(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if invitation.invitation_type == InvitationType.COMPANY_INVITE:
+            company_admins_ids = [
+                member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
+            ]
+            if user.id not in company_admins_ids:
+                raise PermissionDenied(message="Only company owners or admins can accept invitations.")
+
+            await self.company_repository.reject_invitation(invitation=invitation)
+
+    async def cancel_outgoing_user_invitation(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if invitation.invitation_type == InvitationType.COMPANY_INVITE:
+            company_admins_ids = [
+                member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
+            ]
+            if user.id not in company_admins_ids:
+                raise PermissionDenied(message="Only company owners or admins can cansel invitations.")
+
+            await self.company_repository.cancel_invitation(invitation=invitation)
+
+
+    async def accept_incoming_company_invitation(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        company = await self.company_repository.get(company_id=invitation.company_id, owner_id=None)
+        if not company:
+            raise ObjectNotFound(model_name="Company", id_=invitation.company_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if not invitation.invitation_type == InvitationType.COMPANY_INVITE:
+            raise PermissionDenied(message="Only company invitations can be accepted this way.")
+
+        if not invitation.invited_user_id == user.id:
+            raise UnauthorizedAction(message="You are not authorized to accept this invitation.")
+
+        await self.company_repository.accept_invitation(invitation=invitation)
+
+        await self.company_repository.add_user_to_company(
+            company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
+        )
+
+    async def reject_incoming_company_invitation(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if not invitation.invitation_type == InvitationType.COMPANY_INVITE:
+            raise PermissionDenied(message="Only company invitations can be rejected this way.")
+
+        if not invitation.invited_user_id == user.id:
+            raise UnauthorizedAction(message="You are not authorized to reject this invitation.")
+
+        await self.company_repository.reject_invitation(invitation=invitation)
+
+    async def cancel_outgoing_company_request(self, invitation_id: UUID, user: User) -> None:
+        invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
+        if not invitation:
+            raise ObjectNotFound(model_name="Company Invitation", id_=invitation_id)
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise ObjectAlreadyExists(message="Invitation has already been responded to.")
+
+        if not invitation.invitation_type == InvitationType.USER_REQUEST:
+            raise PermissionDenied(message="Only user membership requests can be canceled this way.")
+
+        if not invitation.invited_by_id == user.id:
+            raise UnauthorizedAction(message="You are not authorized to cancel this invitation.")
+
+        await self.company_repository.cancel_invitation(invitation=invitation)
