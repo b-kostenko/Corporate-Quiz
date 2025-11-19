@@ -428,7 +428,7 @@ class CompanyService:
             raise ObjectAlreadyExists(message="Invitation has already been responded to.")
 
         if not invitation.invitation_type == InvitationType.COMPANY_INVITE:
-            raise PermissionDenied(message="Only company invitations can be accepted this way.")
+            raise PermissionDenied(message="Only company invitations can be rejected this way.")
 
         if not invitation.invited_user_id == user.id:
             raise UnauthorizedAction(message="You are not authorized to reject this invitation.")
