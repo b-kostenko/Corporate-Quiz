@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, InvitationType
 
 
 class AbstractCompanyRepository(ABC):
@@ -45,7 +45,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def invite_user_to_company(self, company: Company, invite_user: User, invited_by: User) -> CompanyInvitation:
+    async def invite_user_to_company(self, company: Company, invite_user: User, invited_by: User, invitation_type: InvitationType) -> CompanyInvitation:
         """Invite a user to a company."""
         raise NotImplementedError
 
@@ -62,12 +62,17 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def accept_company_invitation(self, invitation: CompanyInvitation) -> None:
+    async def accept_invitation(self, invitation: CompanyInvitation) -> None:
         """Get invitation by ID."""
         raise NotImplementedError
 
     @abstractmethod
-    async def decline_company_invitation(self, invitation: CompanyInvitation) -> None:
+    async def decline_invitation(self, invitation: CompanyInvitation) -> None:
+        """Get invitation by ID."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def reject_invitation(self, invitation: CompanyInvitation) -> None:
         """Get invitation by ID."""
         raise NotImplementedError
 
@@ -77,7 +82,7 @@ class AbstractCompanyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def cancel_company_invitation(self, invitation: CompanyInvitation) -> None:
+    async def cancel_invitation(self, invitation: CompanyInvitation) -> None:
         """Get invitation by ID."""
         raise NotImplementedError
 

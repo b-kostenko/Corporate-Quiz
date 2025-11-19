@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import CompanyMember, User
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus, InvitationType
 
 
 class CompanyInputSchema(BaseModel):
@@ -61,6 +61,7 @@ class CompanyInvitationOutputSchema(BaseModel):
     company: CompanyOutputSchema
     invited_user: UserOutputSchema
     invited_by: UserOutputSchema
+    invitation_type: InvitationType
     status: InvitationStatus
 
     class Config:

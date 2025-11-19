@@ -17,3 +17,8 @@ class InvitationStatus(StrEnum):
     ACCEPTED = "accepted"
     DECLINED = "declined"
     CANCELED = "canceled"
+    REJECTED = "rejected"
+
+class InvitationType(StrEnum):
+    COMPANY_INVITE = "company_invite"
+    USER_REQUEST = "user_request"

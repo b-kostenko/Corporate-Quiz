@@ -4,7 +4,7 @@ from sqlalchemy import Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.postgres.models.base import BaseModelMixin
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus, InvitationType
 from app.infrastructure.postgres.models.user import User
 
 
@@ -52,6 +52,10 @@ class CompanyInvitation(BaseModelMixin):
     company_id: Mapped[UUID] = mapped_column(ForeignKey("companies.id"))
     invited_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     invited_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+
+    invitation_type: Mapped[InvitationType] = mapped_column(
+        Enum(InvitationType, native_enum=False), nullable=False
+    )
     status: Mapped[InvitationStatus] = mapped_column(
         Enum(InvitationStatus, native_enum=False), default=InvitationStatus.PENDING, nullable=False
     )
