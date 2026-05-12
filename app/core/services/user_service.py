@@ -8,7 +8,7 @@ from app.core.schemas import PaginatedResponse, PaginationMeta
 from app.core.schemas.user_schemas import UserInputSchema, UserOutputSchema
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.security.password import hash_password
-from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound
+from app.utils.exceptions import ConflictError, ObjectAlreadyExists, ObjectNotFound
 
 
 class UserService(AbstractUserService):
@@ -52,6 +52,9 @@ class UserService(AbstractUserService):
         return UserOutputSchema.model_validate(response)
 
     async def delete(self, user: User) -> None:
+        if await self.user_repository.has_owned_companies(user_id=user.id):
+            raise ConflictError("Please delete your companies before deleting your account.")
+
         await self.user_repository.delete(user=user)
 
     async def update_avatar(self, user_avatar: str, user: User) -> UserOutputSchema:

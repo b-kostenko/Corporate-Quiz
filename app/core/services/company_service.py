@@ -12,7 +12,7 @@ from app.core.schemas.pagination_schemas import PaginatedResponse, PaginationMet
 from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import Company, User
 from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, InvitationType
-from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, UnauthorizedAction, PermissionDenied
+from app.utils.exceptions import ObjectAlreadyExists, ObjectNotFound, PermissionDenied, UnauthorizedAction
 
 
 class CompanyService:
@@ -227,27 +227,21 @@ class CompanyService:
         await self.company_repository.remove_user_invitations(company=company, user_id=user.id)
 
     async def get_company_members(self, company_id: UUID) -> CompanyMemberOutputSchema:
-        """Get company with separated owner and members."""
+        """Get company with all members, including owner."""
         company = await self.company_repository.get(company_id=company_id, owner_id=None)
         if not company:
             raise ObjectNotFound(model_name="Company", id_=company_id)
 
-        # Get members with their roles
         members = await self.company_repository.get_company_members(company=company)
 
-        # Separate owner and members
-        owner_schema = None
-        members_schemas = []
-        
-        for user, company_member in members:
-            user_schema = CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
-            if company_member.role == CompanyMemberRole.OWNER:
-                owner_schema = user_schema
-            else:  # ADMIN or MEMBER
-                members_schemas.append(user_schema)
+        members_schemas = [
+            CompanyMemberUserSchema.from_models(user=user, company_member=company_member)
+            for user, company_member in members
+        ]
+        members_schemas.sort(key=lambda member: member.role != CompanyMemberRole.OWNER)
 
         company_schema = CompanyMemberOutputSchema.model_validate(
-            {**CompanyOutputSchema.model_validate(company).model_dump(), "owner": owner_schema, "members": members_schemas}
+            {**CompanyOutputSchema.model_validate(company).model_dump(), "members": members_schemas}
         )
         return company_schema
 
@@ -339,18 +333,20 @@ class CompanyService:
         if invitation.status != InvitationStatus.PENDING:
             raise ObjectAlreadyExists(message="Invitation has already been responded to.")
 
-        if invitation.invitation_type == InvitationType.COMPANY_INVITE:
-            company_admins_ids = [
-                member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
-            ]
-            if user.id not in company_admins_ids:
-                raise PermissionDenied(message="Only company owners or admins can accept invitations.")
+        if invitation.invitation_type != InvitationType.USER_REQUEST:
+            raise PermissionDenied(message="Only user membership requests can be accepted this way.")
 
-            await self.company_repository.accept_invitation(invitation=invitation)
+        company_admins_ids = [
+            member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
+        ]
+        if user.id not in company_admins_ids:
+            raise PermissionDenied(message="Only company owners or admins can accept membership requests.")
 
-            await self.company_repository.add_user_to_company(
-                company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
-            )
+        await self.company_repository.accept_invitation(invitation=invitation)
+
+        await self.company_repository.add_user_to_company(
+            company=company, user_id=invitation.invited_user_id, role=CompanyMemberRole.MEMBER
+        )
 
     async def reject_incoming_user_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)
@@ -364,14 +360,16 @@ class CompanyService:
         if invitation.status != InvitationStatus.PENDING:
             raise ObjectAlreadyExists(message="Invitation has already been responded to.")
 
-        if invitation.invitation_type == InvitationType.COMPANY_INVITE:
-            company_admins_ids = [
-                member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
-            ]
-            if user.id not in company_admins_ids:
-                raise PermissionDenied(message="Only company owners or admins can accept invitations.")
+        if invitation.invitation_type != InvitationType.USER_REQUEST:
+            raise PermissionDenied(message="Only user membership requests can be rejected this way.")
 
-            await self.company_repository.reject_invitation(invitation=invitation)
+        company_admins_ids = [
+            member.user_id for member in company.members if member.role in (CompanyMemberRole.OWNER, CompanyMemberRole.ADMIN)
+        ]
+        if user.id not in company_admins_ids:
+            raise PermissionDenied(message="Only company owners or admins can reject membership requests.")
+
+        await self.company_repository.reject_invitation(invitation=invitation)
 
     async def cancel_outgoing_user_invitation(self, invitation_id: UUID, user: User) -> None:
         invitation = await self.company_repository.get_invitation_by_id(invitation_id=invitation_id)

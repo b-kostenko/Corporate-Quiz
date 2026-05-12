@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.schemas.user_schemas import UserOutputSchema
 from app.infrastructure.postgres.models import CompanyMember, User
@@ -96,5 +96,4 @@ class CompanyMemberUserSchema(BaseModel):
 class CompanyMemberOutputSchema(CompanyOutputSchema):
     """Schema for company member output data."""
 
-    owner: CompanyMemberUserSchema | None = None
-    members: list[CompanyMemberUserSchema] = []
+    members: list[CompanyMemberUserSchema] = Field(default_factory=list)

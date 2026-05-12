@@ -33,6 +33,10 @@ def _include_error_handlers(app: FastAPI) -> None:
         error_handlers.handle_object_not_found # type: ignore
     )
     app.add_exception_handler(
+        exceptions.ConflictError,
+        error_handlers.handle_conflict_error # type: ignore
+    )
+    app.add_exception_handler(
         exceptions.InvalidCredentials,
         error_handlers.handle_invalid_credentials # type: ignore
     )

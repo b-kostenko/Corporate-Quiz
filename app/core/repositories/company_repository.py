@@ -1,14 +1,14 @@
 from typing import Sequence, Tuple
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.interfaces.company_repo_interface import AbstractCompanyRepository
-from app.infrastructure.postgres.models import Company, User
+from app.infrastructure.postgres.models import Answer, Company, Question, Quiz, User, UserQuizAttempt
 from app.infrastructure.postgres.models.company import CompanyInvitation, CompanyMember
-from app.infrastructure.postgres.models.enums import CompanyMemberRole, InvitationStatus, CompanyStatus, InvitationType
+from app.infrastructure.postgres.models.enums import CompanyMemberRole, CompanyStatus, InvitationStatus, InvitationType
 from app.infrastructure.postgres.session_manager import provide_async_session
 
 
@@ -84,7 +84,16 @@ class CompanyRepository(AbstractCompanyRepository):
 
     @provide_async_session
     async def delete(self, company: Company, owner_id: UUID, session: AsyncSession) -> bool:
-        await session.delete(company)
+        quiz_ids = select(Quiz.id).where(Quiz.company_id == company.id)
+        question_ids = select(Question.id).where(Question.quiz_id.in_(quiz_ids))
+
+        await session.execute(delete(CompanyInvitation).where(CompanyInvitation.company_id == company.id))
+        await session.execute(delete(CompanyMember).where(CompanyMember.company_id == company.id))
+        await session.execute(delete(UserQuizAttempt).where(UserQuizAttempt.company_id == company.id))
+        await session.execute(delete(Answer).where(Answer.question_id.in_(question_ids)))
+        await session.execute(delete(Question).where(Question.quiz_id.in_(quiz_ids)))
+        await session.execute(delete(Quiz).where(Quiz.company_id == company.id))
+        await session.execute(delete(Company).where(Company.id == company.id, Company.owner_id == owner_id))
         await session.commit()
         return True
 

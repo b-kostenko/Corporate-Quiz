@@ -12,6 +12,12 @@ class ObjectNotFound(Exception):
         super().__init__(self.msg)
 
 
+class ConflictError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 class InvalidCredentials(Exception):
     def __init__(self, message: Optional[str] = "Invalid credentials provided") -> None:
         super().__init__(message)

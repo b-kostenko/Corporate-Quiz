@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.interfaces.user_repo_interface import AbstractUserRepository
+from app.infrastructure.postgres.models.company import Company
 from app.infrastructure.postgres.models.user import User
 from app.infrastructure.postgres.session_manager import provide_async_session
 
@@ -40,6 +41,13 @@ class UserRepository(AbstractUserRepository):
         result = await session.execute(query)
         users = result.scalars().all()
         return list(users), total
+
+
+    @provide_async_session
+    async def has_owned_companies(self, user_id: UUID, session: AsyncSession) -> bool:
+        query = select(Company.id).where(Company.owner_id == user_id).limit(1)
+        result = await session.execute(query)
+        return result.scalar_one_or_none() is not None
 
 
     @provide_async_session

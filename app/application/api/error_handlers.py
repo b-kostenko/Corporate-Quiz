@@ -12,6 +12,10 @@ def handle_object_already_exists(_: Request, e: base_exc.ObjectAlreadyExists) ->
     return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_409_CONFLICT)
 
 
+def handle_conflict_error(_: Request, e: base_exc.ConflictError) -> JSONResponse:
+    return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_409_CONFLICT)
+
+
 def handle_invalid_credentials(_: Request, e: base_exc.InvalidCredentials) -> JSONResponse:
     return JSONResponse(content={"message": str(e)}, status_code=status.HTTP_401_UNAUTHORIZED)
 

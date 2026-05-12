@@ -25,6 +25,10 @@ class AbstractUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def has_owned_companies(self, user_id: UUID) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     async def update(self, user: User, updates: Dict) -> User:
         raise NotImplementedError
 
